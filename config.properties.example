@@ -1,0 +1,5 @@
+python.bin=c:/Python27/python.exe
+wind.api.dir=K:/java/code/WindAPI/python/
+mysql.url=jdbc:mysql://127.0.0.1:3306/wind
+mysql.username=root
+mysql.password=root

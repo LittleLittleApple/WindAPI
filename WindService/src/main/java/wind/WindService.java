@@ -78,13 +78,6 @@ public class WindService {
 		return wd.getStocksFromData();
 	}
 
-	public List<String> getStockCodes(String sector) throws IOException,
-			InterruptedException, WindErrorResponse {
-		Map<String, String> stockMap = getStocks(sector);
-		stockMap.keySet().toArray();
-		return null;
-	}
-
 	public Map<String, String> getCurrentMarket(String stockCode)
 			throws IOException, InterruptedException, WindErrorResponse {
 		String pythonScriptPath = getPythonFilePath("Market.py");
@@ -155,11 +148,10 @@ public class WindService {
 	}
 
 	// syncKData(List stockList, Date begin,Date end,String KType)
-	public int[] syncKData(List<String> stockList, Date begin, Date end,
+	public void syncKData(List<String> stockList, Date begin, Date end,
 			String kType) throws IOException, InterruptedException,
 			WindErrorResponse, SQLException, InstantiationException,
 			IllegalAccessException, ClassNotFoundException {
-		int[] res;
 		
 		Class.forName("com.mysql.jdbc.Driver").newInstance();
 		Connection conn = DriverManager.getConnection(mysqlConfig.url,
@@ -193,14 +185,13 @@ public class WindService {
 					}
 				}
 			} finally {
-				res = insertStmt.executeBatch();
+				insertStmt.executeBatch();
 				conn.commit();
 				insertStmt.close();
 			}
 		} finally {
 			conn.setAutoCommit(autoCommit);
 		}
-		return res;
 	}
 
 	private void init_wind_database(Connection conn) throws SQLException,
