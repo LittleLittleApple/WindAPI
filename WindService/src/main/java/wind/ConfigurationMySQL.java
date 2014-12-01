@@ -18,10 +18,10 @@ public class ConfigurationMySQL {
 	public static String getRequiredParameter(ResourceBundle configuration,
 			String parameter) {
 		String value = configuration.getString(parameter);
-		if (value == null || value.isEmpty()) {
-			throw new IllegalArgumentException("missing parameter: "
-					+ parameter);
-		}
+//		if (value == null || value.isEmpty()) {
+//			throw new IllegalArgumentException("missing parameter: "
+//					+ parameter);
+//		}
 		return value;
 	}
 }
