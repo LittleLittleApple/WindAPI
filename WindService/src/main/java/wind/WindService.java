@@ -261,11 +261,11 @@ public class WindService {
 
 	private String getPythonFilePath(String pyName) throws IOException {
 		String pyPath = "";
-		if (new File(WIND_API_PATH + pyName).exists()) {
-			pyPath = WIND_API_PATH + pyName;
+		if (new File(WIND_API_PATH + "/" +  pyName).exists()) {
+			pyPath = WIND_API_PATH + "/" +  pyName;
 		} else {
-			if (getClass().getResource(WIND_API_PATH + pyName) == null) {
-				throw new IOException("");
+			if (getClass().getResource(WIND_API_PATH + "/" +  pyName) == null) {
+				throw new IOException(WIND_API_PATH + "/" + pyName + " not found");
 			}
 			pyPath = getClass().getResource(WIND_API_PATH + pyName).getPath()
 					.replaceFirst("/", "");
