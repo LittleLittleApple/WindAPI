@@ -18,15 +18,14 @@ public class MarketTestCase {
 		//获取000001.SZ的当前行情
 		Map<String, String> market = ws.getCurrentMarket("000001.SZ");
 		Assert.assertTrue(market.keySet().size() > 1);
-//		Assert.assertEquals("11.27", market.get("rt_open"));
-//		Assert.assertEquals("12.44", market.get("rt_last"));
-//		Assert.assertEquals("484483936.0", market.get("rt_vol"));
-//		Assert.assertEquals("0.0999", market.get("rt_pct_chg"));
-//		Assert.assertEquals("5793392235.0", market.get("rt_amt"));
-//		Assert.assertEquals("12.44", market.get("rt_high"));
-//		Assert.assertEquals("11.18", market.get("rt_low"));
-//		Assert.assertEquals("20141129 23:14:19", market.get("w_time"));
-
+		Assert.assertTrue(market.keySet().contains("w_time"));
+		Assert.assertTrue(market.keySet().contains("rt_open"));
+		Assert.assertTrue(market.keySet().contains("rt_last"));
+		Assert.assertTrue(market.keySet().contains("rt_vol"));
+		Assert.assertTrue(market.keySet().contains("rt_pct_chg"));
+		Assert.assertTrue(market.keySet().contains("rt_amt"));
+		Assert.assertTrue(market.keySet().contains("rt_high"));
+		Assert.assertTrue(market.keySet().contains("rt_low"));
 	}
 
 }

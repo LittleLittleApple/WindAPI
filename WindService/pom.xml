@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>Wind</groupId>
 	<artifactId>WindService</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.2-SNAPSHOT</version>
 	<name>WindService</name>
 	<dependencies>
 		<dependency>
@@ -17,4 +17,8 @@
 			<version>3.2.8</version>
 		</dependency>
 	</dependencies>
+	<organization>
+		<name>LittleLittleApple</name>
+		<url>https://github.com/LittleLittleApple/WindAPI</url>
+	</organization>
 </project>
