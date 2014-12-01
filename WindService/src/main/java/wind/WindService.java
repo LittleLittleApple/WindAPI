@@ -87,7 +87,7 @@ public class WindService {
 		cmdLst.add(stockCode);
 		WindData wd = execCommand(buildCmd(cmdLst));
 
-//		wd.printDataList();
+		// wd.printDataList();
 
 		List<Map<String, String>> dataLst = wd.toList();
 		// Since python will return a 2D array with only on element, we should
@@ -99,9 +99,11 @@ public class WindService {
 		}
 	}
 
-	//get kdata from wind.
-	// @params: kType: KType.ONE_MIN_KTYPE,KType.FIVE_MIN_KTYPE,KType.THIRDTY_MIN_KTYPE,KType.DAY_KTYPE,KType.WEEK_KTYPE,KType.MONTH_KTYPE
-	// @return [{w_time=>"xxx",open=>"xxx",volume=>"xxx",amt=>"xxx",high=>"xxx",low=>"xxx",close=>"xxx"},...]
+	// get kdata from wind.
+	// @params: kType:
+	// KType.ONE_MIN_KTYPE,KType.FIVE_MIN_KTYPE,KType.THIRDTY_MIN_KTYPE,KType.DAY_KTYPE,KType.WEEK_KTYPE,KType.MONTH_KTYPE
+	// @return
+	// [{w_time=>"xxx",open=>"xxx",volume=>"xxx",amt=>"xxx",high=>"xxx",low=>"xxx",close=>"xxx"},...]
 	public List<Map<String, String>> getKData(String stockCode, Date begin,
 			Date end, String kType) throws IOException, InterruptedException,
 			WindErrorResponse {
@@ -130,16 +132,18 @@ public class WindService {
 		cmdLst.add(kdataPeriod);
 		WindData wd = execCommand(buildCmd(cmdLst));
 
-//		wd.printDataList();
+		// wd.printDataList();
 
 		return fixRawKey(wd.toList());
 	}
-	
-	//since the raw key in K data is a little bit different from minutes KData and Day KData.
-	private List<Map<String, String>> fixRawKey(List<Map<String, String>> kdataLst) {
-		
-		for(int i=0;i<kdataLst.size();i++) {
-			if(kdataLst.get(i).containsKey("amount")) {
+
+	// since the raw key in K data is a little bit different from minutes KData
+	// and Day KData.
+	private List<Map<String, String>> fixRawKey(
+			List<Map<String, String>> kdataLst) {
+
+		for (int i = 0; i < kdataLst.size(); i++) {
+			if (kdataLst.get(i).containsKey("amount")) {
 				kdataLst.get(i).put("amt", kdataLst.get(i).get("amount"));
 				kdataLst.get(i).remove("amount");
 			}
@@ -152,7 +156,7 @@ public class WindService {
 			String kType) throws IOException, InterruptedException,
 			WindErrorResponse, SQLException, InstantiationException,
 			IllegalAccessException, ClassNotFoundException {
-		
+
 		Class.forName("com.mysql.jdbc.Driver").newInstance();
 		Connection conn = DriverManager.getConnection(mysqlConfig.url,
 				mysqlConfig.username, mysqlConfig.password);
@@ -260,16 +264,11 @@ public class WindService {
 	}
 
 	private String getPythonFilePath(String pyName) throws IOException {
-		String pyPath = "";
-		if (new File(WIND_API_PATH + "/" +  pyName).exists()) {
-			pyPath = WIND_API_PATH + "/" +  pyName;
-		} else {
-			if (getClass().getResource(WIND_API_PATH + "/" +  pyName) == null) {
-				throw new IOException(WIND_API_PATH + "/" + pyName + " not found");
-			}
-			pyPath = getClass().getResource(WIND_API_PATH + pyName).getPath()
-					.replaceFirst("/", "");
-		}
+		String pyPath = WIND_API_PATH + "/" + pyName;
+		;
+		if (!(new File(pyPath).exists())) {
+			throw new IOException(pyPath + " not found");
+		} 
 
 		System.out.println("Python script: " + pyPath);
 		return pyPath;
