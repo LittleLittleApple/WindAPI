@@ -16,13 +16,13 @@ import wind.WindService;
 
 public class KDataTestCase {
 
+	private final WindService ws = new WindService();
+	private static final String KDATA_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+	
 	@Test
 	public void test() throws IOException, ParseException, InterruptedException, WindErrorResponse {
-		String KDATA_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 		
-		WindService ws = new WindService();
 		
-
 		//获取000001.SZ的K线信息， 其中KType有六种
 		DateFormat format1 = new SimpleDateFormat(KDATA_DATE_FORMAT);        
 		Date begin = format1.parse("2014-11-17 01:38:31");
@@ -52,7 +52,21 @@ public class KDataTestCase {
 		Assert.assertEquals("10.99", dateKData.get("high"));
 		Assert.assertEquals("10.71", dateKData.get("low"));
 		Assert.assertEquals("10.76", dateKData.get("close"));
+		
+		begin = format1.parse("2014-11-17 01:38:31");
+		end = format1.parse("2014-12-17 15:38:31");
+		List<Map<String, String>> dateRes2 = ws.getKData("000001.SZ", begin, end, KType.MONTH_KTYPE);
+		Assert.assertTrue(dateRes2.size() > 0);
 
+	}
+	
+	@Test
+	public void test_monthly() throws IOException, ParseException, InterruptedException, WindErrorResponse {
+		DateFormat format1 = new SimpleDateFormat(KDATA_DATE_FORMAT);        
+		Date begin = format1.parse("2014-11-17 01:38:31");
+		Date end = format1.parse("2014-12-17 15:38:31");
+		List<Map<String, String>> dateRes = ws.getKData("000001.SZ", begin, end, KType.MONTH_KTYPE);
+		Assert.assertTrue(dateRes.size() > 0);
 	}
 
 }

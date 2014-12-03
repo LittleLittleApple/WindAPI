@@ -9,4 +9,11 @@ CREATE TABLE IF NOT EXISTS `kdata` (
   `volume` varchar(255) DEFAULT NULL,
   `amt` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`ktype`,`stock_code`,`w_time`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `wind_version` (
+  `dbver` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`dbver`)
+) DEFAULT CHARSET=utf8;
+/*Note: please extend it to procedure when you want to write migrate script*/
+INSERT INTO wind_version (dbver) values(1) ON DUPLICATE KEY UPDATE dbver=VALUES(dbver);

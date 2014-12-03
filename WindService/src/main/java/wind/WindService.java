@@ -34,6 +34,8 @@ public class WindService {
 	private static final String PYTHON_BIN;
 	private static final String WIND_API_PATH;
 	private static final ConfigurationMySQL mysqlConfig;
+	
+	private boolean isInitedDb=false;
 
 	// private final String INSERT_KDATA_SQL =
 	// "INSERT INTO kdata (stock_code,ktype,w_time,open,close,high,low,volume,amt) VALUES (?,?, ?, ?, ?, ?, ?, ?, ?) on ";
@@ -160,7 +162,9 @@ public class WindService {
 		Class.forName("com.mysql.jdbc.Driver").newInstance();
 		Connection conn = DriverManager.getConnection(mysqlConfig.url,
 				mysqlConfig.username, mysqlConfig.password);
-		init_wind_database(conn);
+		if(!isInitedDb) {
+			init_wind_database(conn);
+		}
 		boolean autoCommit = conn.getAutoCommit();
 
 		int batchLimit = 1000;
@@ -204,7 +208,7 @@ public class WindService {
 		InputStreamReader reader = new InputStreamReader(getClass()
 				.getResourceAsStream("init_wind.sql"));
 		runner.runScript(reader);
-
+		isInitedDb = true;
 	}
 
 	private void setKDataStmt(PreparedStatement updateStmt,
