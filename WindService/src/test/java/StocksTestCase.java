@@ -8,12 +8,14 @@ import wind.WindErrorResponse;
 import wind.WindService;
 
 public class StocksTestCase {
+	
+	private final WindService ws = new WindService();
 
 	@Test
 	public void test() throws InterruptedException, WindErrorResponse,
 			IOException {
 
-		WindService ws = new WindService();
+		
 		// 获取全部A股的市场代码
 		Map<String, String> stockMap = ws.getStocks("全部A股");
 		Assert.assertEquals("平安银行", stockMap.get("000001.SZ"));
@@ -33,10 +35,23 @@ public class StocksTestCase {
 		Map<String, String> stockMap4 = ws.getStocks("全部B股");
 		Assert.assertEquals("深物业B", stockMap4.get("200011.SZ"));
 
-		// It seems not support for HK and TW.
-		// Map<String, String> stockHKMap = ws.getStocks("H股");
-		// Assert.assertEquals("平安银行", stockHKMap.get("000001.SZ"));
-		// Assert.assertEquals("贵人鸟", stockHKMap.get("603555.SH"));
+		
+	}
+	
+	@Test
+	public void testH()  throws InterruptedException, WindErrorResponse,
+	IOException {
+		// It seems that wind does not support for HK.
+		 Map<String, String> stockHKMap = ws.getStocks("全部港股");
+		 Assert.assertTrue(stockHKMap.keySet().size() == 0);
+	}
+	
+	@Test
+	public void testNASDAQ()  throws InterruptedException, WindErrorResponse,
+	IOException {
+		// It seems that wind does not support for NASDAQ.
+		 Map<String, String> stockHKMap = ws.getStocks("NASDAQ全部股票");
+		 Assert.assertTrue(stockHKMap.keySet().size() == 0);
 	}
 
 }

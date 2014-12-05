@@ -68,5 +68,16 @@ public class KDataTestCase {
 		List<Map<String, String>> dateRes = ws.getKData("000001.SZ", begin, end, KType.MONTH_KTYPE);
 		Assert.assertTrue(dateRes.size() > 0);
 	}
+	
+
+	
+	@Test
+	public void testHK_monthly() throws IOException, ParseException, InterruptedException, WindErrorResponse {
+		DateFormat format1 = new SimpleDateFormat(KDATA_DATE_FORMAT);        
+		Date begin = format1.parse("2014-11-17 01:38:31");
+		Date end = format1.parse("2014-12-17 15:38:31");
+		List<Map<String, String>> dateRes = ws.getKData("00872.HK", begin, end, KType.MONTH_KTYPE);
+		Assert.assertTrue(dateRes.size() == 0);
+	}
 
 }

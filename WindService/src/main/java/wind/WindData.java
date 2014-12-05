@@ -114,7 +114,7 @@ public class WindData {
 	
 	private String[] parse1DArray(String arrStr) {
 		String[] res = arrStr.replaceAll("\\[", "").replaceAll("\\]", "")
-				.split(",");
+				.replaceAll("None", "").split(",");
 		return res;
 	}
 
