@@ -35,9 +35,9 @@ public class test {
 		Date begin = format1.parse("2014-11-17 01:38:31");
 		Date end = format1.parse("2014-11-17 15:38:31");
 		
-		List<Map<String, String>> res =  ws.getKData("000001.SZ", begin, end, KType.THIRDTY_MIN_KTYPE);
+//		List<Map<String, String>> res =  ws.getKData("000001.SZ", begin, end, KType.THIRDTY_MIN_KTYPE, PriceAdjust.NONE);
 		
-		ws.getKData("000001.SZ", begin, end, KType.DAY_KTYPE);
+		ws.getKData("000001.SZ", begin, end, KType.DAY_KTYPE, PriceAdjust.NONE);
 		
 //		PythonInterpreter interpreter = new PythonInterpreter();
 //		interpreter.exec("import sys sys.path.append('pathToModiles if they're not there by default') import yourModule");

@@ -19,14 +19,23 @@ stock_code = sys.argv[1]
 start_date = sys.argv[2]
 end_date = sys.argv[3]
 aggregation = sys.argv[4]
-fields = "open,close,high,low,volume,amt"
+priceAdj = sys.argv[5]
+#fields = "open,close,high,low,volume,amt"
+# fields = "open,high,low,close,volume,amt,adjfactor,trade_status,susp_reason"
+fields = "open,high,low,close,volume,amt"
 
 # print aggregation
 print "WindStockReuslt:"
 
 #3.getKData
 # res =  w.wsd("000001.SZ", fields, "2014-11-17", "2014-11-20", "{0}Fill=Previous".format(aggregation))
-res =  w.wsd(stock_code, fields, start_date, end_date, "{0}Fill=Previous".format(aggregation))
+# print "w.wsd("+stock_code+", " + fields + ", " + start_date + ", " + end_date + ", "+ "{0}{1}Fill=Previous".format(aggregation, priceAdj) + ")"
+if not priceAdj:
+    res =  w.wsd(stock_code, fields, start_date, end_date, "{0}{1}Fill=Previous".format(aggregation, priceAdj))
+else:
+    res =  w.wsd(stock_code, fields, start_date, end_date, "{0}Fill=Previous".format(aggregation))
+
+
 print res
 print "\n.Codes="+str1D(res.Codes)
 print "\n.Fields="+str1D(res.Fields)

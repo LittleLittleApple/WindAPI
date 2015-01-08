@@ -10,6 +10,7 @@ import java.util.List;
 import org.junit.Test;
 
 import wind.KType;
+import wind.PriceAdjust;
 import wind.WindErrorResponse;
 import wind.WindService;
 
@@ -28,7 +29,7 @@ public class SyncKDataTestCase {
 		List<String> stockCodes = new ArrayList<String>();
 		stockCodes.add("000001.SZ");
 		stockCodes.add("000002.SZ");
-		ws.syncKData(stockCodes, begin, end, KType.ONE_MIN_KTYPE);
+		ws.syncKData(stockCodes, begin, end, KType.ONE_MIN_KTYPE, PriceAdjust.NONE);
 		
 	}
 	
@@ -42,7 +43,7 @@ public class SyncKDataTestCase {
 		List<String> stockCodes = new ArrayList<String>();
 		stockCodes.add("000001.SZ");
 		stockCodes.add("000002.SZ");
-		ws.syncKData(stockCodes, begin, end, KType.FIVE_MIN_KTYPE);
+		ws.syncKData(stockCodes, begin, end, KType.FIVE_MIN_KTYPE, PriceAdjust.NONE);
 	}
 	
 	@Test
@@ -55,11 +56,11 @@ public class SyncKDataTestCase {
 		List<String> stockCodes = new ArrayList<String>();
 		stockCodes.add("000001.SZ");
 		stockCodes.add("000002.SZ");
-		ws.syncKData(stockCodes, begin, end, KType.THIRDTY_MIN_KTYPE);
+		ws.syncKData(stockCodes, begin, end, KType.THIRDTY_MIN_KTYPE, PriceAdjust.NONE);
 		
 		begin = format1.parse("2014-09-17 01:38:31");
 		end = format1.parse("2014-11-17 15:38:31");
-		ws.syncKData(stockCodes, begin, end, KType.MONTH_KTYPE);
+		ws.syncKData(stockCodes, begin, end, KType.MONTH_KTYPE, PriceAdjust.NONE);
 	}
 	
 	@Test
@@ -72,7 +73,7 @@ public class SyncKDataTestCase {
 		List<String> stockCodes = new ArrayList<String>();
 		stockCodes.add("000001.SZ");
 		stockCodes.add("000002.SZ");
-		ws.syncKData(stockCodes, begin, end, KType.DAY_KTYPE);
+		ws.syncKData(stockCodes, begin, end, KType.DAY_KTYPE, PriceAdjust.NONE);
 		
 	}
 	
@@ -86,7 +87,7 @@ public class SyncKDataTestCase {
 		List<String> stockCodes = new ArrayList<String>();
 		stockCodes.add("000001.SZ");
 		stockCodes.add("000002.SZ");
-		ws.syncKData(stockCodes, begin, end, KType.WEEK_KTYPE);
+		ws.syncKData(stockCodes, begin, end, KType.WEEK_KTYPE, PriceAdjust.NONE);
 	}
 	
 	@Test
@@ -99,7 +100,7 @@ public class SyncKDataTestCase {
 		List<String> stockCodes = new ArrayList<String>();
 		stockCodes.add("000001.SZ");
 		stockCodes.add("000002.SZ");
-		ws.syncKData(stockCodes, begin, end, KType.MONTH_KTYPE);
+		ws.syncKData(stockCodes, begin, end, KType.MONTH_KTYPE, PriceAdjust.NONE);
 	}
 
 }

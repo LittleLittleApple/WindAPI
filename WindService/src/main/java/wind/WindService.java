@@ -105,9 +105,9 @@ public class WindService {
 	// @params: kType:
 	// KType.ONE_MIN_KTYPE,KType.FIVE_MIN_KTYPE,KType.THIRDTY_MIN_KTYPE,KType.DAY_KTYPE,KType.WEEK_KTYPE,KType.MONTH_KTYPE
 	// @return
-	// [{w_time=>"xxx",open=>"xxx",volume=>"xxx",amt=>"xxx",high=>"xxx",low=>"xxx",close=>"xxx"},...]
+	// [{w_time=>"xxx",open=>"xxx",volume=>"xxx",amt=>"xxx",high=>"xxx",low=>"xxx",close=>"xxx", trade_status=>"xxx"},...]
 	public List<Map<String, String>> getKData(String stockCode, Date begin,
-			Date end, String kType) throws IOException, InterruptedException,
+			Date end, String kType, Integer priceAdj) throws IOException, InterruptedException,
 			WindErrorResponse {
 
 		Map<String, String> m = new HashMap<String, String>();
@@ -125,6 +125,8 @@ public class WindService {
 			pythonScriptPath = getPythonFilePath("KData.py");
 		}
 
+		String kdataPriceAdj = PriceAdjust.parsePriceAdj(priceAdj);
+
 		List<String> cmdLst = new ArrayList<String>();
 		cmdLst.add(PYTHON_BIN);
 		cmdLst.add(pythonScriptPath);
@@ -132,6 +134,8 @@ public class WindService {
 		cmdLst.add(startDate);
 		cmdLst.add(endDate);
 		cmdLst.add(kdataPeriod);
+		cmdLst.add(kdataPriceAdj);
+		
 		WindData wd = execCommand(buildCmd(cmdLst));
 
 		// wd.printDataList();
@@ -155,7 +159,7 @@ public class WindService {
 
 	// syncKData(List stockList, Date begin,Date end,String KType)
 	public void syncKData(List<String> stockList, Date begin, Date end,
-			String kType) throws IOException, InterruptedException,
+			String kType, Integer priceAdj) throws IOException, InterruptedException,
 			WindErrorResponse, SQLException, InstantiationException,
 			IllegalAccessException, ClassNotFoundException {
 
@@ -176,7 +180,7 @@ public class WindService {
 				for (int i = 0; i < stockList.size(); i++) {
 					String stockCode = stockList.get(i);
 					List<Map<String, String>> kDataLst = getKData(stockCode,
-							begin, end, kType);
+							begin, end, kType, priceAdj);
 
 					for (int j = 0; j < kDataLst.size(); j++) {
 						Map<String, String> kdata = kDataLst.get(j);
