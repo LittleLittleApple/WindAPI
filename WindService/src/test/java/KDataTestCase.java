@@ -88,21 +88,21 @@ public class KDataTestCase {
 		Date begin = format1.parse("2014-11-17 01:38:31");
 		Date end = format1.parse("2014-11-17 15:38:31");
 		
-//		List<Map<String, String>> res =  ws.getKData("000001.SZ", begin, end, KType.THIRDTY_MIN_KTYPE, PriceAdjust.BACKWARD);
-//		Assert.assertTrue(res.size() > 0);
-//		//w_time=20141117 10:00:00
-//		Map<String, String> kdata = res.get(0);
-//		Assert.assertEquals("20141117 10:00:00", kdata.get("w_time"));
-//		Assert.assertEquals("2014-11-17 10:00:00.005000", kdata.get("time"));
-//		Assert.assertEquals("000001.SZ", kdata.get("windcode"));
-//		Assert.assertEquals("10.95", kdata.get("open"));
-//		Assert.assertEquals("15855947", kdata.get("volume"));
-//		Assert.assertEquals("172390777.36", kdata.get("amt"));
-//		Assert.assertEquals("10.99", kdata.get("high"));
-//		Assert.assertEquals("10.8", kdata.get("low"));
-//		Assert.assertEquals("10.85", kdata.get("close"));
-////		Assert.assertEquals("交易", kdata.get("trade_status"));
-////		Assert.assertEquals("", kdata.get("susp_reason"));
+		List<Map<String, String>> res =  ws.getKData("000001.SZ", begin, end, KType.THIRDTY_MIN_KTYPE, PriceAdjust.FORWARD);
+		Assert.assertTrue(res.size() > 0);
+		//w_time=20141117 10:00:00
+		Map<String, String> kdata = res.get(0);
+		Assert.assertEquals("20141117 10:00:00", kdata.get("w_time"));
+		Assert.assertEquals("2014-11-17 10:00:00.005000", kdata.get("time"));
+		Assert.assertEquals("000001.SZ", kdata.get("windcode"));
+		Assert.assertEquals("10.95", kdata.get("open"));
+		Assert.assertEquals("15855947", kdata.get("volume"));
+		Assert.assertEquals("172390777.36", kdata.get("amt"));
+		Assert.assertEquals("10.99", kdata.get("high"));
+		Assert.assertEquals("10.8", kdata.get("low"));
+		Assert.assertEquals("10.85", kdata.get("close"));
+//		Assert.assertEquals("交易", kdata.get("trade_status"));
+//		Assert.assertEquals("", kdata.get("susp_reason"));
 		
 		begin = format1.parse("2014-06-11 01:38:31");
 		end = format1.parse("2014-06-11 15:38:31");
@@ -218,6 +218,27 @@ public class KDataTestCase {
 		Assert.assertEquals("139.3", kdata.get("low"));
 		Assert.assertEquals("139.5", kdata.get("close"));
 
+	}
+	
+	@Test
+	public void testStockData() throws ParseException {
+		List<List<Double>> stockRes = null;
+		List<Double> kdata = null;
+		Double t = null;
+		stockRes =  ws.getStockData("000001.SZ", 0, "2014-11-16 01:38:31");
+		Assert.assertTrue(stockRes.size() == 300);
+		kdata = stockRes.get(0);
+		Assert.assertTrue(kdata.size() == 8);
+		t = 1416073171000.00;
+		Assert.assertEquals(t, kdata.get(0));
+		
+		stockRes =  ws.getStockData("000001.SZ", 4, "2014-11-16 01:38:31");
+		Assert.assertTrue(stockRes.size() == 300);
+		kdata = stockRes.get(0);
+		Assert.assertTrue(kdata.size() == 8);
+		t = 1416159511000.00;
+		Assert.assertEquals(t, kdata.get(0));
+		
 	}
 
 }

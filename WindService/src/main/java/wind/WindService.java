@@ -11,6 +11,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -141,6 +142,70 @@ public class WindService {
 		// wd.printDataList();
 
 		return fixRawKey(wd.toList());
+	}
+    //get stock kdata with ktype and query date
+	//parameters: 
+	//stockCode: stockcode from wind, such as: 000001.SZ
+	//kType: 0 =>1 minute, 1 =>5 minutes, 2 => 30 minutes, 3 => 60 minutes, 4 => 1 day, 5 => 1 week, 6 => 1 month
+	//priceAdj: 0 => None adjustment, 1 => forward adjustment, 2 => backward adjustment
+	//query date: "yyyy-MM-dd HH:mm:ss". i.e "2014-11-17 01:38:31"
+	//@return
+	//[[timestamp, open, high, low,  close, MA5, MA10, MA20], [timestamp, open, high, low,  close, MA5, MA10, MA20]..]
+	
+	public List<List<Double>> getStockData(String stockCode, String queryDate, Integer kType, Integer priceAdj) throws ParseException {
+		List<List<Double>> res = new ArrayList<List<Double>>();
+		DateFormat format1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");        
+		Date qryDate = format1.parse(queryDate);
+		List<Double> kPointSample = Arrays.asList((double) qryDate.getTime(), 10.95,10.99,10.71,10.85, 10.10, 9.10, 5.10);
+		List<Double> kPointTmp = null;
+		Integer sec = 1;
+		switch (kType) {
+		case 0:
+			sec = 1;
+			break;
+		case 1:
+			sec = 5;
+			break;
+		case 2:
+			sec = 30;
+			break;
+		case 3:
+			sec = 60;
+			break;
+		case 4:
+			sec = 1 * 24 * 60;
+			break;
+		case 5:
+			sec = 1 * 7 * 24 * 60;
+			break;
+		case 6:
+			sec = 1 * 30 * 24 * 60;
+			break;
+
+		default:
+			break;
+		}
+		//convert to second
+		sec = sec * 60;
+		//convert to million second.
+		sec = sec * 1000;
+		
+		for(int i=0;i<300;i++) {
+			kPointTmp = new ArrayList<Double>();
+			for(int j=0;j<8;j++) {
+				if(j == 0) {
+					kPointTmp.add(kPointSample.get(j) + sec);
+//					System.out.println(kPointSample.get(j));
+//					System.out.println(sec);
+//					System.out.println(kPointSample.get(j) + sec);
+				}else{
+					kPointTmp.add(kPointSample.get(j) + 1);
+				}
+			}			
+			res.add(kPointTmp);
+		}
+		
+		return res;
 	}
 
 	// since the raw key in K data is a little bit different from minutes KData
