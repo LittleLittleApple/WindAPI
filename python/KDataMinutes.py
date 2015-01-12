@@ -3,6 +3,7 @@ __author__ = 'henry'
 
 import site
 import sys
+import math
 
 reload(sys)
 sys.setdefaultencoding( "utf-8" )
@@ -20,7 +21,6 @@ end_date = sys.argv[3]
 bar_size = sys.argv[4]
 priceAdj = sys.argv[5]
 fields = "open,close,high,low,volume,amt"
-print "WindStockReuslt:"
 
 #3.getKData
 #∑÷÷”–Ú¡–Kœﬂ
@@ -29,7 +29,19 @@ print "WindStockReuslt:"
 # print w.wsd("000001.SZ", fields, "2014-11-17", "2014-11-20", "Fill=Previous")
 
 
-res = w.wsi(stock_code,fields,start_date,end_date,"{0}{1}".format(bar_size, priceAdj))
+res = w.wsi(stock_code,fields,start_date,end_date,"{0}{1}Fill=Previous;".format(bar_size, priceAdj))
+resM5 = w.wsi(stock_code, "MA",start_date,end_date,"{0}{1}Fill=Previous;MA_N=5;".format(bar_size, priceAdj))
+resM10 = w.wsi(stock_code, "MA",start_date,end_date,"{0}{1}Fill=Previous;MA_N=10;".format(bar_size, priceAdj))
+resM20 = w.wsi(stock_code, "MA",start_date,end_date,"{0}{1}Fill=Previous;MA_N=20;".format(bar_size, priceAdj))
+# res = w.wsi(stock_code,fields,start_date,end_date,"{0}{1}Fill=Previous;MA_N=5;;MA_N=10;MA_N=20".format(bar_size, priceAdj))
+
+resM5Data = resM5.Data[2]
+resM10Data = resM10.Data[2]
+resM20Data = resM20.Data[2]
+res.Data = res.Data + [resM5Data]  + [resM10Data]  + [resM20Data]
+res.Fields = res.Fields +  ['ma5','ma10','ma20']
+
+print "WindStockReuslt:"
 print res
 print "\n.Codes="+str1D(res.Codes)
 print "\n.Fields="+str1D(res.Fields)

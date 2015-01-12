@@ -151,8 +151,18 @@ public class WindService {
 	//query date: "yyyy-MM-dd HH:mm:ss". i.e "2014-11-17 01:38:31"
 	//@return
 	//[[timestamp, open, high, low,  close, MA5, MA10, MA20], [timestamp, open, high, low,  close, MA5, MA10, MA20]..]
-	
-	public List<List<Double>> getStockData(String stockCode, String queryDate, Integer kType, Integer priceAdj) throws ParseException {
+	public List<List<Double>> getStockData(String stockCode, String queryDate, Integer kType, Integer priceAdj) throws ParseException, IOException, InterruptedException, WindErrorResponse {
+		List<List<Double>> res = null;//new ArrayList<List<Double>>();
+		WindStockQuery windQry = new WindStockQuery(queryDate, kType);
+		Date startDate = windQry.getStartDate();
+		Date endDate = windQry.getEndDate();
+		List<Map<String, String>> kData = getKData(stockCode, startDate, endDate, kType.toString(), priceAdj);
+		
+		StockDataFormatter sdFormatter = new StockDataFormatter(kType);
+		res = sdFormatter.parseStockData(kData);
+		return res;
+	}
+	public List<List<Double>> getStockDataSample(String stockCode, String queryDate, Integer kType, Integer priceAdj) throws ParseException {
 		List<List<Double>> res = new ArrayList<List<Double>>();
 		DateFormat format1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");        
 		Date qryDate = format1.parse(queryDate);
