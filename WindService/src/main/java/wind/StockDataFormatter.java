@@ -15,7 +15,7 @@ public class StockDataFormatter {
 	private DateFormat windMinuteResFormat = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
 	private DateFormat windDateResFormat = new SimpleDateFormat("yyyyMMdd");
 	private final String timeKey = "w_time";
-	private final List<String> fields =  Arrays.asList(timeKey,"open","amt","volume","high","low","close", "ma5", "ma10", "ma20");
+	private final List<String> fields =  Arrays.asList(timeKey,"open","high","low","close", "ma5", "ma10", "ma20","amt","volume");
 
 	
 	StockDataFormatter(Integer kType){
