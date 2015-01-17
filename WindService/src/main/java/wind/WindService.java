@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -34,7 +35,7 @@ public class WindService {
 			.getBundle("config");
 	private static final String PYTHON_BIN;
 	private static final String WIND_API_PATH;
-	private static final ConfigurationMySQL mysqlConfig;
+	private static final ConfigurationSQL sqlCfg;
 	
 	private boolean isInitedDb=false;
 
@@ -55,7 +56,7 @@ public class WindService {
 		} else {
 			WIND_API_PATH = "../";
 		}
-		mysqlConfig = new ConfigurationMySQL(configuration);
+		sqlCfg = new ConfigurationSQL(configuration);
 	}
 
 	public WindService() {
@@ -141,7 +142,7 @@ public class WindService {
 
 		// wd.printDataList();
 
-		return fixRawKey(wd.toList());
+		return fixRawKey(stockCode, kType, wd.toList());
 	}
     //get stock kdata with ktype and query date
 	//parameters: 
@@ -151,7 +152,7 @@ public class WindService {
 	//query date: "yyyy-MM-dd HH:mm:ss". i.e "2014-11-17 01:38:31"
 	//@return
 	//[[timestamp, open, high, low,  close, MA5, MA10, MA20], [timestamp, open, high, low,  close, MA5, MA10, MA20]..]
-	public List<List<Double>> getStockData(String stockCode, String queryDate, Integer kType, Integer priceAdj) throws ParseException, IOException, InterruptedException, WindErrorResponse {
+	public List<List<Double>> getStockData1(String stockCode, String queryDate, Integer kType, Integer priceAdj) throws ParseException, IOException, InterruptedException, WindErrorResponse {
 		List<List<Double>> res = null;//new ArrayList<List<Double>>();
 		WindStockQuery windQry = new WindStockQuery(queryDate, kType);
 		Date startDate = windQry.getStartDate();
@@ -162,152 +163,190 @@ public class WindService {
 		res = sdFormatter.parseStockData(kData);
 		return res;
 	}
-	public List<List<Double>> getStockDataSample(String stockCode, String queryDate, Integer kType, Integer priceAdj) throws ParseException {
-		List<List<Double>> res = new ArrayList<List<Double>>();
-		DateFormat format1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");        
-		Date qryDate = format1.parse(queryDate);
-		List<Double> kPointSample = Arrays.asList((double) qryDate.getTime(), 10.95,10.99,10.71,10.85, 10.10, 9.10, 5.10);
-		List<Double> kPointTmp = null;
-		Integer sec = 1;
-		switch (kType) {
-		case 0:
-			sec = 1;
-			break;
-		case 1:
-			sec = 5;
-			break;
-		case 2:
-			sec = 30;
-			break;
-		case 3:
-			sec = 60;
-			break;
-		case 4:
-			sec = 1 * 24 * 60;
-			break;
-		case 5:
-			sec = 1 * 7 * 24 * 60;
-			break;
-		case 6:
-			sec = 1 * 30 * 24 * 60;
-			break;
-
-		default:
-			break;
-		}
-		//convert to second
-		sec = sec * 60;
-		//convert to million second.
-		sec = sec * 1000;
-		
-		for(int i=0;i<300;i++) {
-			kPointTmp = new ArrayList<Double>();
-			for(int j=0;j<8;j++) {
-				if(j == 0) {
-					kPointTmp.add(kPointSample.get(j) + sec);
-//					System.out.println(kPointSample.get(j));
-//					System.out.println(sec);
-//					System.out.println(kPointSample.get(j) + sec);
-				}else{
-					kPointTmp.add(kPointSample.get(j) + 1);
-				}
-			}			
-			res.add(kPointTmp);
-		}
-		
-		return res;
-	}
 
 	// since the raw key in K data is a little bit different from minutes KData
 	// and Day KData.
-	private List<Map<String, String>> fixRawKey(
+	private List<Map<String, String>> fixRawKey(String stockCode, String ktype,
 			List<Map<String, String>> kdataLst) {
 
 		for (int i = 0; i < kdataLst.size(); i++) {
-			if (kdataLst.get(i).containsKey("amount")) {
-				kdataLst.get(i).put("amt", kdataLst.get(i).get("amount"));
-				kdataLst.get(i).remove("amount");
+			Map<String, String > kdataMap = kdataLst.get(i);
+			if(kdataMap == null) {
+				continue;
+			}
+			
+			kdataMap.put("stockCode", stockCode);
+			kdataMap.put("ktype", ktype);
+			
+			if (kdataMap.containsKey("amount")) {
+				kdataMap.put("amt", kdataMap.get("amount"));
+				kdataMap.remove("amount");
 			}
 		}
 		return kdataLst;
 	}
+	
+    //get stock kdata with ktype and query date
+	//parameters: 
+	//stockCode: stockcode from wind, such as: 000001.SZ
+	//kType: 0 =>1 minute, 1 =>5 minutes, 2 => 30 minutes, 3 => 60 minutes, 4 => 1 day, 5 => 1 week, 6 => 1 month
+	//priceAdj: 0 => None adjustment, 1 => forward adjustment, 2 => backward adjustment
+	//query date: "yyyy-MM-dd HH:mm:ss". i.e "2014-11-17 01:38:31"
+	//@return
+	//[[timestamp, open, high, low,  close, MA5, MA10, MA20,amt,volume], [timestamp, open, high, low,  close, MA5, MA10, MA20,amt,volume]..]
+	public List<List<Double>> getStockData(String stockCode, String queryDate, Integer ktype, Integer priceAdj) throws ParseException, IOException, InterruptedException, WindErrorResponse, SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+		List<List<Double>> res = null;//new ArrayList<List<Double>>();
+
+		List<String> stockList = Arrays.asList(stockCode);
+		
+		StockDataLoader sdl = StockDataLoader.getInstance(sqlCfg);
+		if(ktype < 3) {
+			//分钟K线处理
+			
+			//分钟K线只会同步查询当天(today)的数据. Wind对查旧的分钟数据有很大的限制
+//			syncStockData(stockList, new Date(), ktype);
+			//先同步当天的股票数据，用来查找最在复权因子
+			syncStockData(stockList, queryDate, 3);
+			syncStockData(stockList, queryDate, ktype);
+		}else{
+			//日周月K线处理
+			
+
+			if(!isToday(queryDate)) {
+				//同步查询日期的K线数据
+				syncStockData(stockList, queryDate, ktype);
+			}
+		}
+		res = sdl.getStockData(stockCode, ktype, priceAdj, queryDate);
+		return res;
+	}
+	
+    /**
+     * 同步wind的stock数据。注意查询区间， 最好只是同步当天的数据
+     * @throws ParseException 
+     * @throws ClassNotFoundException 
+     * @throws IllegalAccessException 
+     * @throws InstantiationException 
+     * @throws SQLException 
+     */
+	public void syncStockData(List<String> stockList, String sQryDate, Integer ktype) throws IOException, InterruptedException, WindErrorResponse, ParseException, SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+		DateFormat format1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); 
+		DateFormat format2 = new SimpleDateFormat("yyyy-MM-dd");
+		
+		Date qryDate = null;
+		try{
+			qryDate = format1.parse(sQryDate);
+		}catch (ParseException e){
+			qryDate = format2.parse(sQryDate);
+		}
+		syncStockData(stockList, qryDate, ktype);
+	}
+	
+    /**
+     * 同步wind的stock数据。注意查询区间， 最好只是同步当天的数据
+     * @throws ParseException 
+     * @throws ClassNotFoundException 
+     * @throws IllegalAccessException 
+     * @throws InstantiationException 
+     * @throws SQLException 
+     */
+	public void syncStockData(List<String> stockList, Date qryDate, Integer ktype) throws IOException, InterruptedException, WindErrorResponse, SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException, ParseException {
+		Calendar calr= Calendar.getInstance();
+		calr.setTime(qryDate);
+		
+		Date startDate = dayStartOfDate(qryDate);
+		Date endDate = dayEndOfDate(qryDate);
+		Iterator<String> it = stockList.iterator();
+		while(it.hasNext()){
+			String stockCode = it.next();
+//			List<Map<String, String>> kData = getKData(stockCode, startDate, endDate, ktype.toString(), 0);
+			syncKData(stockList, startDate, endDate, ktype.toString(), PriceAdjust.NONE);
+		}
+	}
+	
+	private Date dayStartOfDate(Date date) {  
+		  
+		Calendar calr = Calendar.getInstance();
+        calr.setTime(date);  
+        if ((calr.get(Calendar.HOUR_OF_DAY) == 0) && (calr.get(Calendar.MINUTE) == 0)  
+                && (calr.get(Calendar.SECOND) == 0)) {  
+            return date;  
+        } else {  
+            Date date2 = new Date(date.getTime() - calr.get(Calendar.HOUR_OF_DAY) * 60 * 60  
+                    * 1000 - calr.get(Calendar.MINUTE) * 60 * 1000 - calr.get(Calendar.SECOND)  
+                    * 1000);  
+            return date2;  
+        }
+  
+    }
+	
+	private boolean isToday(String date) throws ParseException {
+		DateFormat format1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); 
+		DateFormat format2 = new SimpleDateFormat("yyyy-MM-dd");
+		
+		Date qryDate = null;
+		try{
+			qryDate = format1.parse(date);
+		}catch (ParseException e){
+			qryDate = format2.parse(date);
+		}
+		return isSameDate(new Date(), qryDate);
+	}
+	
+	   /**
+     * 判断两个日期是否是同一天
+     * 
+     * @param date1
+     *            date1
+     * @param date2
+     *            date2
+     * @return
+     */
+    private boolean isSameDate(Date date1, Date date2) {
+        Calendar cal1 = Calendar.getInstance();
+        cal1.setTime(date1);
+
+        Calendar cal2 = Calendar.getInstance();
+        cal2.setTime(date2);
+
+        boolean isSameYear = cal1.get(Calendar.YEAR) == cal2
+                .get(Calendar.YEAR);
+        boolean isSameMonth = isSameYear
+                && cal1.get(Calendar.MONTH) == cal2.get(Calendar.MONTH);
+        boolean isSameDt = isSameMonth
+                && cal1.get(Calendar.DAY_OF_MONTH) == cal2
+                        .get(Calendar.DAY_OF_MONTH);
+
+        return isSameDt;
+    }
+
+	private Date dayEndOfDate(Date date) {
+
+		Calendar calr = Calendar.getInstance();
+		Date startOfDay = dayStartOfDate(date);
+		calr.setTime(startOfDay);
+		Date date2 = new Date(date.getTime() + 24 * 60 * 60 * 1000 - 1);
+		return date2;
+	}
 
 	// syncKData(List stockList, Date begin,Date end,String KType)
 	public void syncKData(List<String> stockList, Date begin, Date end,
-			String kType, Integer priceAdj) throws IOException, InterruptedException,
-			WindErrorResponse, SQLException, InstantiationException,
-			IllegalAccessException, ClassNotFoundException {
+			String kType, Integer priceAdj) throws IOException,
+			InterruptedException, WindErrorResponse, SQLException,
+			InstantiationException, IllegalAccessException,
+			ClassNotFoundException, ParseException {
 
-		Class.forName("com.mysql.jdbc.Driver").newInstance();
-		Connection conn = DriverManager.getConnection(mysqlConfig.url,
-				mysqlConfig.username, mysqlConfig.password);
-		if(!isInitedDb) {
-			init_wind_database(conn);
+		;
+		StockImporter importer = StockImporter.getInstance(sqlCfg);
+		importer.checkDbVersion();
+		for (int i = 0; i < stockList.size(); i++) {
+			String stockCode = stockList.get(i);
+			List<Map<String, String>> kDataLst = getKData(stockCode, begin,
+					end, kType, priceAdj);
+			importer.importStocks(kDataLst);
+			importer.updateStockMinuteAdjFactor(stockCode, Integer.parseInt(kType));
+
 		}
-		boolean autoCommit = conn.getAutoCommit();
-
-		int batchLimit = 1000;
-		try {
-			PreparedStatement insertStmt = conn
-					.prepareStatement(INSERT_KDATA_SQL);
-			conn.setAutoCommit(false);
-			try {
-				for (int i = 0; i < stockList.size(); i++) {
-					String stockCode = stockList.get(i);
-					List<Map<String, String>> kDataLst = getKData(stockCode,
-							begin, end, kType, priceAdj);
-
-					for (int j = 0; j < kDataLst.size(); j++) {
-						Map<String, String> kdata = kDataLst.get(j);
-						kdata.put("stock_code", stockCode);
-						kdata.put("ktype", kType);
-						setKDataStmt(insertStmt, kdata);
-						batchLimit--;
-						if (batchLimit == 0) {
-							insertStmt.executeBatch();
-							insertStmt.clearBatch();
-							batchLimit = 1000;
-						}
-						insertStmt.clearParameters();
-					}
-				}
-			} finally {
-				insertStmt.executeBatch();
-				conn.commit();
-				insertStmt.close();
-			}
-		} finally {
-			conn.setAutoCommit(autoCommit);
-		}
-	}
-
-	private void init_wind_database(Connection conn) throws SQLException,
-			FileNotFoundException {
-		ScriptRunner runner = new ScriptRunner(conn);
-		InputStreamReader reader = new InputStreamReader(getClass()
-				.getResourceAsStream("init_wind.sql"));
-		runner.runScript(reader);
-		isInitedDb = true;
-	}
-
-	private void setKDataStmt(PreparedStatement updateStmt,
-			Map<String, String> kData) throws SQLException {
-
-		// INSERT_KDATA_SQL =
-		// "INSERT INTO kdata (stock_code,ktype,w_time,open,close,high,low,volume,amt) VALUES (?,?, ?, ?, ?, ?, ?, ?, ?)";
-
-		int index = 1;
-		updateStmt.setString(index++, kData.get("stock_code"));
-		updateStmt.setString(index++, kData.get("ktype"));
-		updateStmt.setString(index++, kData.get("w_time"));
-		updateStmt.setString(index++, kData.get("open"));
-		updateStmt.setString(index++, kData.get("close"));
-		updateStmt.setString(index++, kData.get("high"));
-		updateStmt.setString(index++, kData.get("low"));
-		updateStmt.setString(index++, kData.get("volume"));
-		updateStmt.setString(index++, kData.get("amt"));
-		System.out.println(updateStmt.toString());
-		updateStmt.addBatch();
 	}
 
 	private WindData execCommand(String[] cmd) throws IOException,
