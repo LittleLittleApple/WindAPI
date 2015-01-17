@@ -14,7 +14,7 @@ public class PriceAdjust {
 	private final static Map<Integer, String> priceAdjMapping;
 	static {
 		priceAdjMapping = new HashMap<Integer, String>();
-		priceAdjMapping.put(NONE, ""); 
+		priceAdjMapping.put(NONE, "N"); 
 		priceAdjMapping.put(FORWARD, "PriceAdj=F;"); 
 		priceAdjMapping.put(BACKWARD, "PriceAdj=B;");
 	}
