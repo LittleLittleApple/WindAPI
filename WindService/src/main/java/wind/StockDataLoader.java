@@ -70,10 +70,10 @@ public class StockDataLoader {
 		
 		System.out.println(pstmt.toString());
 		ResultSet rs =  pstmt.executeQuery();
-		return getResultMap(rs);
+		return getResultMap(rs,priceAdj);
 	}
 	
-	private static List<List<Double>> getResultMap(ResultSet rs)
+	private static List<List<Double>> getResultMap(ResultSet rs, Integer priceAdj)
 			throws SQLException, ParseException {
 		List<List<Double>> resLst = new ArrayList<List<Double>>();
 		
@@ -86,7 +86,7 @@ public class StockDataLoader {
 				String value = rs.getString(i);
 				hm.put(key, value);
 			}
-			SingleStockData ssData= new SingleStockData(hm);
+			SingleStockData ssData= new SingleStockData(hm,priceAdj);
 			resLst.add(ssData.toRawList());
 		}
 

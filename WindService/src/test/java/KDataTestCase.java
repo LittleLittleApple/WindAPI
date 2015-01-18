@@ -226,17 +226,27 @@ public class KDataTestCase {
 		List<List<Double>> stockRes = null;
 		List<Double> kdata = null;
 		
-		stockRes =  ws.getStockData("000001.SZ", "2014-11-16 01:38:31", 3, 0);
+//		stockRes =  ws.getStockData("000001.SZ", "2014-06-11 01:38:31", 3, 0);
+//		kdata = stockRes.get(0);
+//		System.out.println(kdata.toString());
+//		Assert.assertTrue(kdata.size() == 10);
+		
+
+		stockRes =  ws.getStockData("000001.SZ", "2014-06-11 01:38:31", 3, 0);
 		kdata = stockRes.get(0);
+		System.out.println(kdata.toString());
 		Assert.assertTrue(kdata.size() == 10);
 		
-		stockRes =  ws.getStockData("000001.SZ", "2014-11-16 01:38:31", 4, 0);
-		kdata = stockRes.get(0);
-		Assert.assertTrue(kdata.size() == 10);
+//		stockRes =  ws.getStockData("000001.SZ", "2014-11-16 01:38:31", 4, 0);
+//		kdata = stockRes.get(0);
+//		Assert.assertTrue(kdata.size() == 10);
+//		
+//		stockRes =  ws.getStockData("000001.SZ", "2014-11-16 01:38:31", 5, 0);
+//		kdata = stockRes.get(0);
+//		Assert.assertTrue(kdata.size() == 10);
 		
-		stockRes =  ws.getStockData("000001.SZ", "2014-11-16 01:38:31", 5, 0);
-		kdata = stockRes.get(0);
-		Assert.assertTrue(kdata.size() == 10);
+		
+		
 //		Assert.assertTrue(kdata.size() == 10);
 //		Assert.assertEquals(1416153600000.00, kdata.get(0), 0.000);
 //		Assert.assertEquals(10.95, kdata.get(1), 0.000);
@@ -252,17 +262,35 @@ public class KDataTestCase {
 	@Test
 	public void testStockDataMinutes() throws ParseException, IOException, InterruptedException, WindErrorResponse, SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
 		List<List<Double>> stockRes = null;
-		List<Double> kdata = null;
+		List<Double> kdata = null;		
+		String sQryDate="2015-01-16 13:38:31";
 		
-		stockRes =  ws.getStockData("000001.SZ", "2015-01-15 13:38:31", 0, 0);
+		
+		stockRes =  ws.getStockData("000001.SZ", sQryDate, 0, 0);
+		kdata = stockRes.get(0);
+		System.out.println(kdata.toString());
+		Assert.assertTrue(kdata.size() == 10);
+		
+		stockRes =  ws.getStockData("000001.SZ", sQryDate, 1, 0);
 		kdata = stockRes.get(0);
 		Assert.assertTrue(kdata.size() == 10);
 		
-		stockRes =  ws.getStockData("000001.SZ", "2015-01-15 13:38:31", 1, 0);
+		stockRes =  ws.getStockData("000001.SZ", sQryDate, 2, 0);
 		kdata = stockRes.get(0);
 		Assert.assertTrue(kdata.size() == 10);
 		
-		stockRes =  ws.getStockData("000001.SZ", "2015-01-15 13:38:31", 2, 0);
+
+		sQryDate="2015-01-15 13:38:31";
+		stockRes =  ws.getStockData("000001.SZ", sQryDate, 0, 0);
+		kdata = stockRes.get(0);
+		System.out.println(kdata.toString());
+		Assert.assertTrue(kdata.size() == 10);
+		
+		stockRes =  ws.getStockData("000001.SZ", sQryDate, 1, 0);
+		kdata = stockRes.get(0);
+		Assert.assertTrue(kdata.size() == 10);
+		
+		stockRes =  ws.getStockData("000001.SZ", sQryDate, 2, 0);
 		kdata = stockRes.get(0);
 		Assert.assertTrue(kdata.size() == 10);
 

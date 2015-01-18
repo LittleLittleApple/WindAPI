@@ -87,6 +87,22 @@ public class StockImporter {
 		runner.runScript(reader);
 	}
 	
+	// check if the stock has been imported
+	public boolean isImported(String stockCode, Integer ktype) throws SQLException, FileNotFoundException {
+
+		//由于一天可能在不同的时间点同步多次股票数据，所以要求分钟的K线数据可以重复导入并更新
+		if(ktype < 3) {
+			return false;
+		}
+		//日K线，周K线，月K线
+		String sSQL = "select  1  from ws_kdata where stockCode = '"+ stockCode +"' and ktype = " + ktype;
+		ResultSet rs =  dbHelper.executeQuery(sSQL);
+		if (rs.next()) {
+			return true;
+		}
+		return false;
+	}
+	
 	//Arrays.asList(timeKey,"open","high","low","close", "ma5", "ma10", "ma20","amt","volume");
 	public void importStocks(List<Map<String, String>> kdataLst) throws SQLException, ParseException {
 		int total = kdataLst.size();
@@ -160,7 +176,7 @@ public class StockImporter {
 	
 	public void updateStockMinuteAdjFactor(String stockCode, Integer ktype) throws SQLException {
 		if(ktype >= 3) {
-			System.out.println("ktype: " + ktype + " Only minute Kdata need to update adjfactor. since wind doesn't return adjfactor.");
+//			System.out.println("ktype: " + ktype + " Only minute Kdata need to update adjfactor. since wind doesn't return adjfactor.");
 			return;
 		}
 		PreparedStatement pstmt = conn.prepareStatement(UPDATE_MINUTE_KDATA_ADJFACTOR_SQL);

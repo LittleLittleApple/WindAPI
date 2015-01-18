@@ -8,11 +8,14 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.ibatis.annotations.Case;
+
 //单个股票K线数据(采样点)
 public class SingleStockData {
 
 	private String stockCode = null;
 	private int ktype = -1;
+	private int priceAdj = -1;
 	private Date w_time = null; 
 	private double open = -1d; 
 	private double high = -1d; 
@@ -37,10 +40,10 @@ public class SingleStockData {
 	private DateFormat kdateDateFormat2 = new SimpleDateFormat(KDATA_DATE_FORMAT2);
 	private DateFormat kdateDateFormat3 = new SimpleDateFormat(KDATA_DATE_FORMAT3);
 
-	public SingleStockData(Map<String, String> stockData) throws ParseException {
+	public SingleStockData(Map<String, String> stockData,Integer priceAdj) throws ParseException {
 		this.stockCode = stockData.get("stockCode");
 		this.ktype = Integer.parseInt(stockData.get("ktype"));
-
+		this.priceAdj = priceAdj;
 		this.w_time =  tryParse(stockData.get("w_time"));
 		this.open =  parseStockValue(stockData.get("open"));
 		this.high = parseStockValue(stockData.get("high"));
@@ -107,10 +110,24 @@ public class SingleStockData {
 	}
 	
 	private double parseAdj(double v) {
+		double resV= v;
 		if(v == -1d) {
-			return v;
+			return resV;
 		}else{
-			return (double) v / MULTIPLIEDFORSQL;
+			
+			switch (priceAdj) {
+			case 1:
+				resV = v * (this.adjfactor / this.max_adjfactor);
+				break;
+			case 2:
+				resV = v * this.adjfactor;
+				break;
+
+			default:
+				resV = v;
+				break;
+			}
+			return resV;
 		}
 	}
 	
@@ -132,35 +149,35 @@ public class SingleStockData {
 	}
 	
 	public double getOpen() {
-		return open;
+		return parseAdj(open);
 	}
 	
 	public double getHigh() {
-		return high;
+		return  parseAdj(high);
 	}
 	
 	public double getLow() {
-		return low;
+		return  parseAdj(low);
 	}
 	
 	public double getClose() {
-		return close;
+		return  parseAdj(close);
 	}
 	
 	public double getVolume() {
-		return volume;
+		return  parseAdj(volume);
 	}
 	
 	public double getAmt() {
-		return amt;
+		return  parseAdj(amt);
 	}
 	
 	public double getMa5() {
-		return ma5;
+		return  parseAdj(ma5);
 	}
 	
 	public double getMa10() {
-		return ma10;
+		return  parseAdj(ma10);
 	}
 	
 	public double getMa20() {

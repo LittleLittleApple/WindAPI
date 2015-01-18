@@ -20,6 +20,12 @@ public class WindErrorResponse extends Exception {
 		errorCodeMessage.put(-40521003, "网络连接失败");
 		errorCodeMessage.put(-40521004, "操请求发送失败");
 		errorCodeMessage.put(-40520002, "系统错误");
+		errorCodeMessage.put(-40521008, "错误的应答");
+		errorCodeMessage.put(-40520007, "无数据");
+		errorCodeMessage.put(-40520005, "无权限");
+		errorCodeMessage.put(-40522003, "非法请求");
+		errorCodeMessage.put(-40522017, "数据提取量超限");
+		errorCodeMessage.put(-40521006, "网络错误");
 
 	}
 

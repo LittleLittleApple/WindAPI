@@ -144,25 +144,6 @@ public class WindService {
 
 		return fixRawKey(stockCode, kType, wd.toList());
 	}
-    //get stock kdata with ktype and query date
-	//parameters: 
-	//stockCode: stockcode from wind, such as: 000001.SZ
-	//kType: 0 =>1 minute, 1 =>5 minutes, 2 => 30 minutes, 3 => 60 minutes, 4 => 1 day, 5 => 1 week, 6 => 1 month
-	//priceAdj: 0 => None adjustment, 1 => forward adjustment, 2 => backward adjustment
-	//query date: "yyyy-MM-dd HH:mm:ss". i.e "2014-11-17 01:38:31"
-	//@return
-	//[[timestamp, open, high, low,  close, MA5, MA10, MA20], [timestamp, open, high, low,  close, MA5, MA10, MA20]..]
-	public List<List<Double>> getStockData1(String stockCode, String queryDate, Integer kType, Integer priceAdj) throws ParseException, IOException, InterruptedException, WindErrorResponse {
-		List<List<Double>> res = null;//new ArrayList<List<Double>>();
-		WindStockQuery windQry = new WindStockQuery(queryDate, kType);
-		Date startDate = windQry.getStartDate();
-		Date endDate = windQry.getEndDate();
-		List<Map<String, String>> kData = getKData(stockCode, startDate, endDate, kType.toString(), priceAdj);
-		
-		StockDataFormatter sdFormatter = new StockDataFormatter(kType);
-		res = sdFormatter.parseStockData(kData);
-		return res;
-	}
 
 	// since the raw key in K data is a little bit different from minutes KData
 	// and Day KData.
@@ -189,7 +170,7 @@ public class WindService {
     //get stock kdata with ktype and query date
 	//parameters: 
 	//stockCode: stockcode from wind, such as: 000001.SZ
-	//kType: 0 =>1 minute, 1 =>5 minutes, 2 => 30 minutes, 3 => 60 minutes, 4 => 1 day, 5 => 1 week, 6 => 1 month
+	//kType: 0 =>1 minute, 1 =>5 minutes, 2 => 30 minutes, 3 => 1 day, 4 => 1 week, 5 => 1 month
 	//priceAdj: 0 => None adjustment, 1 => forward adjustment, 2 => backward adjustment
 	//query date: "yyyy-MM-dd HH:mm:ss". i.e "2014-11-17 01:38:31"
 	//@return
@@ -204,13 +185,11 @@ public class WindService {
 			//分钟K线处理
 			
 			//分钟K线只会同步查询当天(today)的数据. Wind对查旧的分钟数据有很大的限制
-//			syncStockData(stockList, new Date(), ktype);
-			//先同步当天的股票数据，用来查找最在复权因子
-			syncStockData(stockList, queryDate, 3);
+			//先同步今天的股票数据，用来查找最在复权因子
+			syncStockData(stockList, new Date(), 3);
 			syncStockData(stockList, queryDate, ktype);
 		}else{
 			//日周月K线处理
-			
 
 			if(!isToday(queryDate)) {
 				//同步查询日期的K线数据
@@ -222,7 +201,35 @@ public class WindService {
 	}
 	
     /**
+     * 自动同步wind的stock数据。注意查询区间， 最好只是同步当天的数据. 该接口同步顺序:月线 -> 周线 -> 日线 -> 1分钟K线 -> 5分钟K线 -> 30分钟K线
+     * 其中月线，周线和日线会检查数据库是否存在。如果已经重复，那就不会再向Wind查询
+     * @param  stockList: 从Wind获取回来的股票代码列表
+     * @param  sQryDate:  查询日期.支持两种格式:yyyy-MM-dd HH:mm:ss, yyyy-MM-dd. 注意：同步的过程中，系统会自动重置查询日期为00:00:00 ~ 23:59:59
+     * @param  ktype:  K线数据类型.0 =>1 minute, 1 =>5 minutes, 2 => 30 minutes, 3 => 1 day, 4 => 1 week, 5 => 1 month
+     * 
+     * @throws ParseException 
+     * @throws ClassNotFoundException 
+     * @throws IllegalAccessException 
+     * @throws InstantiationException 
+     * @throws SQLException 
+     */
+	public void syncStockData(List<String> stockList, String sQryDate) throws IOException, InterruptedException, WindErrorResponse, ParseException, SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+		Date qryDate = tryParseDate(sQryDate);
+		syncStockData(stockList, qryDate, 5);  //先同步月线
+		syncStockData(stockList, qryDate, 4);  //先同步周线
+		syncStockData(stockList, qryDate, 3);  //先同步日线
+		
+		syncStockData(stockList, qryDate, 0);  //同步1分钟K线
+		syncStockData(stockList, qryDate, 1);  //同步5分钟K线
+		syncStockData(stockList, qryDate, 2);  //同步30分钟K线
+	}
+	
+    /**
      * 同步wind的stock数据。注意查询区间， 最好只是同步当天的数据
+     * @param  stockList: 从Wind获取回来的股票代码列表
+     * @param  sQryDate:  查询日期.支持两种格式:yyyy-MM-dd HH:mm:ss, yyyy-MM-dd. 注意：同步的过程中，系统会自动重置查询日期为00:00:00 ~ 23:59:59
+     * @param  ktype:  K线数据类型.0 =>1 minute, 1 =>5 minutes, 2 => 30 minutes, 3 => 1 day, 4 => 1 week, 5 => 1 month
+     * 
      * @throws ParseException 
      * @throws ClassNotFoundException 
      * @throws IllegalAccessException 
@@ -230,6 +237,11 @@ public class WindService {
      * @throws SQLException 
      */
 	public void syncStockData(List<String> stockList, String sQryDate, Integer ktype) throws IOException, InterruptedException, WindErrorResponse, ParseException, SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+		Date qryDate = tryParseDate(sQryDate);
+		syncStockData(stockList, qryDate, ktype);
+	}
+	
+	private Date tryParseDate(String sQryDate) throws ParseException {
 		DateFormat format1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); 
 		DateFormat format2 = new SimpleDateFormat("yyyy-MM-dd");
 		
@@ -239,11 +251,15 @@ public class WindService {
 		}catch (ParseException e){
 			qryDate = format2.parse(sQryDate);
 		}
-		syncStockData(stockList, qryDate, ktype);
+		return qryDate;
 	}
 	
     /**
      * 同步wind的stock数据。注意查询区间， 最好只是同步当天的数据
+     * @param  stockList: 从Wind获取回来的股票代码列表
+     * @param  qryDate:  查询日期.  注意：同步的过程中，系统会自动重置查询日期为00:00:00 ~ 23:59:59
+     * @param  ktype:  K线数据类型.0 =>1 minute, 1 =>5 minutes, 2 => 30 minutes, 3 => 1 day, 4 => 1 week, 5 => 1 month
+     * 
      * @throws ParseException 
      * @throws ClassNotFoundException 
      * @throws IllegalAccessException 
@@ -256,12 +272,7 @@ public class WindService {
 		
 		Date startDate = dayStartOfDate(qryDate);
 		Date endDate = dayEndOfDate(qryDate);
-		Iterator<String> it = stockList.iterator();
-		while(it.hasNext()){
-			String stockCode = it.next();
-//			List<Map<String, String>> kData = getKData(stockCode, startDate, endDate, ktype.toString(), 0);
-			syncKData(stockList, startDate, endDate, ktype.toString(), PriceAdjust.NONE);
-		}
+		syncKData(stockList, startDate, endDate, ktype.toString(), PriceAdjust.NONE);
 	}
 	
 	private Date dayStartOfDate(Date date) {  
@@ -328,23 +339,30 @@ public class WindService {
 		Date date2 = new Date(date.getTime() + 24 * 60 * 60 * 1000 - 1);
 		return date2;
 	}
+	
 
-	// syncKData(List stockList, Date begin,Date end,String KType)
-	public void syncKData(List<String> stockList, Date begin, Date end,
-			String kType, Integer priceAdj) throws IOException,
+
+	/*
+	 * 按指定参数，同步Wind的数据到数据库。 注意这是旧的同步接口， 已经新加了一个更简单的公共接口: syncStockData
+	 * 
+	 */
+	private void syncKData(List<String> stockList, Date begin, Date end,
+			String ktype, Integer priceAdj) throws IOException,
 			InterruptedException, WindErrorResponse, SQLException,
 			InstantiationException, IllegalAccessException,
 			ClassNotFoundException, ParseException {
 
-		;
 		StockImporter importer = StockImporter.getInstance(sqlCfg);
 		importer.checkDbVersion();
 		for (int i = 0; i < stockList.size(); i++) {
 			String stockCode = stockList.get(i);
+			if(importer.isImported(stockCode, Integer.parseInt(ktype))) {
+				continue;
+			}
 			List<Map<String, String>> kDataLst = getKData(stockCode, begin,
-					end, kType, priceAdj);
+					end, ktype, priceAdj);
 			importer.importStocks(kDataLst);
-			importer.updateStockMinuteAdjFactor(stockCode, Integer.parseInt(kType));
+			importer.updateStockMinuteAdjFactor(stockCode, Integer.parseInt(ktype));
 
 		}
 	}
