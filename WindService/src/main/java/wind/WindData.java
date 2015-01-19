@@ -79,6 +79,7 @@ public class WindData {
 		return stockMap;
 	}
 
+	//TODO 要加上nan的处理
 	// parse result to List
 	// @return: [{"w_time=> ""2014-11-17 10:00:00.005000", "open"=>"10.95"...},
 	// {"w_time=> ""2014-11-17 10:30:00.005000", "open"=>"10.74"...}]
@@ -96,14 +97,24 @@ public class WindData {
 					} else {
 						rowMap = new HashMap<String, String>();
 						// Added time field to result set.
-						rowMap.put("w_time", this.times[j]);
+						rowMap.put("w_time", processWindValue(times[j]));
 						resList.add(rowMap);
 					}
-					rowMap.put(rawKey, values[j]);
+					rowMap.put(rawKey, processWindValue(values[j]));
 				}
 			}
 		}
 		return resList;
+	}
+	
+	private String processWindValue(String sValue) {
+		if(sValue == null || sValue.isEmpty()) {
+			return "";
+		}else if (sValue.equalsIgnoreCase("nan")) {
+			return "";
+		}else {
+			return sValue;
+		}
 	}
 
 	// Success only when errorCode is 0

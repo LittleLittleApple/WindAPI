@@ -3,10 +3,8 @@ package wind;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 
 //单个股票K线数据(采样点)
@@ -61,7 +59,7 @@ public class SingleStockSQLData {
 	
 	
 	private long parseStockValue(String stockValue) {
-		long iRes = -1l;
+		long iRes = -1l * MULTIPLIEDFORSQL;
 		if( stockValue == null || stockValue.isEmpty()) {
 			return iRes;
 		}

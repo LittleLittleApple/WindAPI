@@ -11,8 +11,6 @@ public class WindStockQuery {
 	private DateFormat format1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	private Integer ktMillionSec = null;
 	
-	private Integer kLineCount = 300;
-	
 	WindStockQuery(Integer kType) {
 		ktMillionSec = getMillionSeconds(kType);
 	}

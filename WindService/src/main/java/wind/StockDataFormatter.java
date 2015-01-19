@@ -4,7 +4,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -69,11 +68,11 @@ public class StockDataFormatter {
 						kdataEleRes.add(v);
 					}else{
 //						System.out.println("key is not exists:" + k);
-						kdataEleRes.add(-1.00);
+						kdataEleRes.add(null);
 					}
 				} catch (Exception e) {
 					System.out.println(e.getMessage());
-					kdataEleRes.add(-1.00);
+					kdataEleRes.add(null);
 				}
 			}
 			if(stkRes.size() <= 300){

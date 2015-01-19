@@ -2,13 +2,9 @@
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -18,12 +14,9 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
-
-import org.apache.ibatis.jdbc.ScriptRunner;
 
 public class WindService {
 	private static final String DATE_FORMAT_NOW = "yyyyMMdd";
@@ -37,18 +30,6 @@ public class WindService {
 	private static final String WIND_API_PATH;
 	private static final ConfigurationSQL sqlCfg;
 	
-	private boolean isInitedDb=false;
-
-	// private final String INSERT_KDATA_SQL =
-	// "INSERT INTO kdata (stock_code,ktype,w_time,open,close,high,low,volume,amt) VALUES (?,?, ?, ?, ?, ?, ?, ?, ?) on ";
-	private final String INSERT_KDATA_SQL = "INSERT INTO kdata set "
-			+ " stock_code = ?, " + " ktype = ?, " + " w_time = ?, "
-			+ " open = ?, " + " close = ? ," + " high = ? ," + " low = ?, "
-			+ " volume = ? ," + " amt = ? " + "ON DUPLICATE KEY UPDATE"
-			+ " open = VALUES(open), " + " close = VALUES(close) ,"
-			+ " high = VALUES(high) ," + " low = VALUES(low), "
-			+ " volume = VALUES(volume) ," + " amt = VALUES(amt) ";
-
 	static {
 		PYTHON_BIN = configuration.getString("python.bin");
 		if (configuration.containsKey("wind.api.dir")) {
@@ -108,7 +89,7 @@ public class WindService {
 	// KType.ONE_MIN_KTYPE,KType.FIVE_MIN_KTYPE,KType.THIRDTY_MIN_KTYPE,KType.DAY_KTYPE,KType.WEEK_KTYPE,KType.MONTH_KTYPE
 	// @return
 	// [{w_time=>"xxx",open=>"xxx",volume=>"xxx",amt=>"xxx",high=>"xxx",low=>"xxx",close=>"xxx", trade_status=>"xxx"},...]
-	public List<Map<String, String>> getKData(String stockCode, Date begin,
+	private List<Map<String, String>> getKData(String stockCode, Date begin,
 			Date end, String kType, Integer priceAdj) throws IOException, InterruptedException,
 			WindErrorResponse {
 
@@ -167,35 +148,27 @@ public class WindService {
 		return kdataLst;
 	}
 	
-    //get stock kdata with ktype and query date
-	//parameters: 
-	//stockCode: stockcode from wind, such as: 000001.SZ
-	//kType: 0 =>1 minute, 1 =>5 minutes, 2 => 30 minutes, 3 => 1 day, 4 => 1 week, 5 => 1 month
-	//priceAdj: 0 => None adjustment, 1 => forward adjustment, 2 => backward adjustment
-	//query date: "yyyy-MM-dd HH:mm:ss". i.e "2014-11-17 01:38:31"
-	//@return
-	//[[timestamp, open, high, low,  close, MA5, MA10, MA20,amt,volume], [timestamp, open, high, low,  close, MA5, MA10, MA20,amt,volume]..]
+	/*根据K线类型和复权类型查询股票行情数据. 
+		由于 Wind对查旧的分钟数据有很大的限制,分钟K线只会同步查询当天(today)的数据.
+		parameters: 
+		stockCode: stockcode from wind, such as: 000001.SZ
+		kType: 0 =>1 minute, 1 =>5 minutes, 2 => 30 minutes, 3 => 1 day, 4 => 1 week, 5 => 1 month
+		priceAdj: 0 => None adjustment, 1 => forward adjustment, 2 => backward adjustment
+		query date: "yyyy-MM-dd HH:mm:ss". i.e "2014-11-17 01:38:31"
+		@return:  股票的列表数据
+    */
 	public List<List<Double>> getStockData(String stockCode, String queryDate, Integer ktype, Integer priceAdj) throws ParseException, IOException, InterruptedException, WindErrorResponse, SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
 		List<List<Double>> res = null;//new ArrayList<List<Double>>();
 
 		List<String> stockList = Arrays.asList(stockCode);
 		
 		StockDataLoader sdl = StockDataLoader.getInstance(sqlCfg);
-		if(ktype < 3) {
-			//分钟K线处理
-			
-			//分钟K线只会同步查询当天(today)的数据. Wind对查旧的分钟数据有很大的限制
-			//先同步今天的股票数据，用来查找最在复权因子
-			syncStockData(stockList, new Date(), 3);
-			syncStockData(stockList, queryDate, ktype);
-		}else{
-			//日周月K线处理
-
-			if(!isToday(queryDate)) {
-				//同步查询日期的K线数据
-				syncStockData(stockList, queryDate, ktype);
-			}
+		//同步查询日期的K线数据, 如果当天没有结束，则不会同步。
+		if(ktype >= 3 && isToday(queryDate)) {
+			return res;
 		}
+		//分钟K线只会同步查询当天(today)的数据. Wind对查旧的分钟数据有很大的限制
+		syncStockData(stockList, queryDate, ktype);
 		res = sdl.getStockData(stockCode, ktype, priceAdj, queryDate);
 		return res;
 	}
@@ -330,13 +303,15 @@ public class WindService {
 
         return isSameDt;
     }
+    
+    
 
 	private Date dayEndOfDate(Date date) {
 
 		Calendar calr = Calendar.getInstance();
 		Date startOfDay = dayStartOfDate(date);
 		calr.setTime(startOfDay);
-		Date date2 = new Date(date.getTime() + 24 * 60 * 60 * 1000 - 1);
+		Date date2 = new Date(calr.getTime().getTime() + 24 * 60 * 60 * 1000 - 1);
 		return date2;
 	}
 	
@@ -362,7 +337,7 @@ public class WindService {
 			List<Map<String, String>> kDataLst = getKData(stockCode, begin,
 					end, ktype, priceAdj);
 			importer.importStocks(kDataLst);
-			importer.updateStockMinuteAdjFactor(stockCode, Integer.parseInt(ktype));
+//			importer.updateStockMinuteAdjFactor(stockCode, Integer.parseInt(ktype));
 
 		}
 	}

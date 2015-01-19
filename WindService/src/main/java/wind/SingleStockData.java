@@ -8,8 +8,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.ibatis.annotations.Case;
-
 //单个股票K线数据(采样点)
 public class SingleStockData {
 
@@ -73,14 +71,19 @@ public class SingleStockData {
 		}
 	}
 	
-	private double parseStockValue(String stockValue) {
-		double iRes = -1d;
+	private Double parseStockValue(String stockValue) {
+		Double iRes = null;
 		if( stockValue == null || stockValue.isEmpty()) {
 			return iRes;
 		}
+		
 		try {
 			Double dValue = Double.parseDouble(stockValue);
 			iRes = (double) dValue / MULTIPLIEDFORSQL;
+			//check for the missing value(default value -1l) on database.
+			if(iRes < 0) {
+				iRes = null;
+			}
 		}catch(NumberFormatException e){
 			System.err.println(e.getMessage());
 		}
@@ -108,11 +111,11 @@ public class SingleStockData {
 		resLst.add(getVolume());
 		return resLst;
 	}
-	
-	private double parseAdj(double v) {
-		double resV= v;
-		if(v == -1d) {
-			return resV;
+	//TODO 默认值应该返回null, 而不是-1
+	private Double parseAdjValue(Double v) {
+		Double resV= v;
+		if(v == null || v.isNaN()) {
+			return null;
 		}else{
 			
 			switch (priceAdj) {
@@ -139,48 +142,44 @@ public class SingleStockData {
 		return Integer.toString(ktype);
 	}
 
-	public double getWTimestamp() {
+	public Double getWTimestamp() {
 		long v = w_time.getTime();
-		if(v == -1l) {
-			return -1d;
-		}else{
-			return (double) v ;
-		}
+		return (double) v ;
 	}
 	
-	public double getOpen() {
-		return parseAdj(open);
+	public Double getOpen() {
+		return parseAdjValue(open);
 	}
 	
-	public double getHigh() {
-		return  parseAdj(high);
+	public Double getHigh() {
+		return  parseAdjValue(high);
 	}
 	
-	public double getLow() {
-		return  parseAdj(low);
+	public Double getLow() {
+		return  parseAdjValue(low);
 	}
 	
-	public double getClose() {
-		return  parseAdj(close);
+	public Double getClose() {
+		return  parseAdjValue(close);
 	}
 	
-	public double getVolume() {
-		return  parseAdj(volume);
+	public Double getVolume() {
+		return  parseAdjValue(volume);
 	}
 	
-	public double getAmt() {
-		return  parseAdj(amt);
+	public Double getAmt() {
+		return  parseAdjValue(amt);
 	}
 	
-	public double getMa5() {
-		return  parseAdj(ma5);
+	public Double getMa5() {
+		return  parseAdjValue(ma5);
 	}
 	
-	public double getMa10() {
-		return  parseAdj(ma10);
+	public Double getMa10() {
+		return  parseAdjValue(ma10);
 	}
 	
-	public double getMa20() {
+	public Double getMa20() {
 		return ma20;
 	}
 	
@@ -188,11 +187,11 @@ public class SingleStockData {
 		return w_time;
 	}
 	
-	public double getAdjfactor() {
+	public Double getAdjfactor() {
 		return adjfactor;
 	}
 
-	public double getMaxAdjfactor() {
+	public Double getMaxAdjfactor() {
 		return max_adjfactor;
 	}
 

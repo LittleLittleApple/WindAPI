@@ -24,6 +24,28 @@ fields = "open,close,high,low,volume,amt"
 
 if priceAdj == "N":
     priceAdj=""
+
+def is_same_day(strDateTime1, strDateTime2):
+    strDate1 = strDateTime1.split(' ')[0]
+    strDate2 = strDateTime2.split(' ')[0]
+    return strDate1 == strDate2
+
+
+if not is_same_day(start_date, end_date):
+    err_msg = "Wrong parameters: the start date {0} is not equal to end date {1}. Same date is only supported.".format(start_date, end_date)
+    print "\n.ErrorCode=-99999"
+    print "\n.Data=[['{0}']]".format(err_msg)
+    raise StandardError, err_msg
+
+#fetch and merge adj from wsd
+res_day =  w.wsd(stock_code, "adjfactor", start_date, end_date, "Period=D;{0}Fill=Previous".format(priceAdj))
+if res_day.ErrorCode != 0:
+    print res_day
+    err_msg = "Error while fetching Date K data.ErrorCode: {0}".format(res_day.ErrorCode)
+    raise StandardError,err_msg
+
+adjfactor=res_day.Data[0]
+
 #3.getKData
 #∑÷÷”–Ú¡–Kœﬂ
 # print w.wsi("000001.SZ", "open,close,high,low,volume,amt","2014-11-10 09:00:00", "2014-11-10 02:50:46", "")
@@ -33,7 +55,18 @@ if priceAdj == "N":
 
 res = w.wsi(stock_code,fields,start_date,end_date,"{0}{1}Fill=Previous;".format(bar_size, priceAdj))
 print res
-if (res.ErrorCode == 0):
+
+#add adjfactor to kdata
+
+adjfactor_lst = []    #temp adjfactor list.
+for item in res.Times:
+    adjfactor_lst = adjfactor_lst + adjfactor
+
+res.Fields = res.Fields + ['adjfactor']
+res.Data = res.Data + [adjfactor_lst]
+
+#start to merge MA data
+if res.ErrorCode == 0:
     resM5 = w.wsi(stock_code, "MA",start_date,end_date,"{0}{1}Fill=Previous;MA_N=5;".format(bar_size, priceAdj))
     print resM5
     resM10 = w.wsi(stock_code, "MA",start_date,end_date,"{0}{1}Fill=Previous;MA_N=10;".format(bar_size, priceAdj))
