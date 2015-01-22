@@ -1,5 +1,6 @@
 package wind;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,5 +30,29 @@ public class KType {
 					+ parameter);
 		}
 		return value;
+	}
+	
+	public static Date getDefaultStart(Date qryDate, Integer ktype) {
+		Date startDate = null;
+		if(ktype <= 3) {
+			startDate = DatetimeUtility.dayStartOfDate(qryDate);
+		}else if (ktype == 4) {
+			startDate = DatetimeUtility.firstDateOfWeek(qryDate);
+		}else if (ktype == 5) {
+			startDate = DatetimeUtility.firstDateOfMonth(qryDate);
+		}
+		return startDate;
+	}
+	
+	public static Date getDefaultEnd(Date qryDate, Integer ktype) {
+		Date startDate = null;
+		if(ktype <= 3) {
+			startDate = DatetimeUtility.dayEndOfDate(qryDate);
+		}else if (ktype == 4) {
+			startDate = DatetimeUtility.lastDateOfWeek(qryDate);
+		}else if (ktype == 5) {
+			startDate = DatetimeUtility.lastDateOfMonth(qryDate);
+		}
+		return startDate;
 	}
 }

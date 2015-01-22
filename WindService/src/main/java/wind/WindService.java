@@ -83,6 +83,48 @@ public class WindService {
 			return null;
 		}
 	}
+	
+	/*
+	 * 获取股票停牌数据
+	 * @params: 
+	 * stockCode: 股票代码。 必须从wind中获得. i.e:"000001.SZ"
+	 * sQryDate:  "yyyy-MM-dd". i.e "2014-11-17"
+	 * @return:  如果查询的股票在查询时间内停牌， 则会返回StockSuspendData类型的数据， 否则则返回null
+	 * 
+	 */
+	public StockSuspendData getSuspendData(String stockCode, String sQryDate)
+			throws IOException, InterruptedException, WindErrorResponse, ParseException {
+		
+		StockSuspendData ssd = null;
+		Date qryDate = DatetimeUtility.tryParseDate(sQryDate);
+		Date today = DatetimeUtility.dayEndOfDate(new Date());
+		
+		String startDate = null;
+		if(qryDate.after(today)) {
+			startDate = DatetimeUtility.date2WindString(today);
+		}else {
+			startDate = DatetimeUtility.date2WindString(qryDate);
+		}
+		
+		String endDate = startDate;
+		
+		
+		
+		String pythonScriptPath = getPythonFilePath("TradeSuspend.py");
+		List<String> cmdLst = new ArrayList<String>();
+		cmdLst.add(PYTHON_BIN);
+		cmdLst.add(pythonScriptPath);
+		cmdLst.add(stockCode);
+		cmdLst.add(startDate);
+		cmdLst.add(endDate);
+		WindData wd = execCommand(buildCmd(cmdLst));
+		
+		ssd = new StockSuspendData(stockCode, wd);;
+//		if (!ssd.isSuspended()) {
+//			ssd = null;
+//		}
+		return ssd;
+	}
 
 	// get kdata from wind.
 	// @params: kType:
@@ -164,7 +206,7 @@ public class WindService {
 		
 		StockDataLoader sdl = StockDataLoader.getInstance(sqlCfg);
 		//同步查询日期的K线数据, 如果当天没有结束，则不会同步。
-		if(ktype >= 3 && isToday(queryDate)) {
+		if(ktype >= 3 && DatetimeUtility.isToday(queryDate)) {
 			return res;
 		}
 		//分钟K线只会同步查询当天(today)的数据. Wind对查旧的分钟数据有很大的限制
@@ -187,7 +229,7 @@ public class WindService {
      * @throws SQLException 
      */
 	public void syncStockData(List<String> stockList, String sQryDate) throws IOException, InterruptedException, WindErrorResponse, ParseException, SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
-		Date qryDate = tryParseDate(sQryDate);
+		Date qryDate = DatetimeUtility.tryParseDate(sQryDate);
 		syncStockData(stockList, qryDate, 5);  //先同步月线
 		syncStockData(stockList, qryDate, 4);  //先同步周线
 		syncStockData(stockList, qryDate, 3);  //先同步日线
@@ -210,22 +252,11 @@ public class WindService {
      * @throws SQLException 
      */
 	public void syncStockData(List<String> stockList, String sQryDate, Integer ktype) throws IOException, InterruptedException, WindErrorResponse, ParseException, SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
-		Date qryDate = tryParseDate(sQryDate);
+		Date qryDate = DatetimeUtility.tryParseDate(sQryDate);
 		syncStockData(stockList, qryDate, ktype);
 	}
 	
-	private Date tryParseDate(String sQryDate) throws ParseException {
-		DateFormat format1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); 
-		DateFormat format2 = new SimpleDateFormat("yyyy-MM-dd");
-		
-		Date qryDate = null;
-		try{
-			qryDate = format1.parse(sQryDate);
-		}catch (ParseException e){
-			qryDate = format2.parse(sQryDate);
-		}
-		return qryDate;
-	}
+
 	
     /**
      * 同步wind的stock数据。注意查询区间， 最好只是同步当天的数据
@@ -240,83 +271,12 @@ public class WindService {
      * @throws SQLException 
      */
 	public void syncStockData(List<String> stockList, Date qryDate, Integer ktype) throws IOException, InterruptedException, WindErrorResponse, SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException, ParseException {
-		Calendar calr= Calendar.getInstance();
-		calr.setTime(qryDate);
 		
-		Date startDate = dayStartOfDate(qryDate);
-		Date endDate = dayEndOfDate(qryDate);
+		Date startDate = KType.getDefaultStart(qryDate, ktype);
+		Date endDate = KType.getDefaultEnd(qryDate, ktype);
 		syncKData(stockList, startDate, endDate, ktype.toString(), PriceAdjust.NONE);
 	}
 	
-	private Date dayStartOfDate(Date date) {  
-		  
-		Calendar calr = Calendar.getInstance();
-        calr.setTime(date);  
-        if ((calr.get(Calendar.HOUR_OF_DAY) == 0) && (calr.get(Calendar.MINUTE) == 0)  
-                && (calr.get(Calendar.SECOND) == 0)) {  
-            return date;  
-        } else {  
-            Date date2 = new Date(date.getTime() - calr.get(Calendar.HOUR_OF_DAY) * 60 * 60  
-                    * 1000 - calr.get(Calendar.MINUTE) * 60 * 1000 - calr.get(Calendar.SECOND)  
-                    * 1000);  
-            return date2;  
-        }
-  
-    }
-	
-	private boolean isToday(String date) throws ParseException {
-		DateFormat format1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); 
-		DateFormat format2 = new SimpleDateFormat("yyyy-MM-dd");
-		
-		Date qryDate = null;
-		try{
-			qryDate = format1.parse(date);
-		}catch (ParseException e){
-			qryDate = format2.parse(date);
-		}
-		return isSameDate(new Date(), qryDate);
-	}
-	
-	   /**
-     * 判断两个日期是否是同一天
-     * 
-     * @param date1
-     *            date1
-     * @param date2
-     *            date2
-     * @return
-     */
-    private boolean isSameDate(Date date1, Date date2) {
-        Calendar cal1 = Calendar.getInstance();
-        cal1.setTime(date1);
-
-        Calendar cal2 = Calendar.getInstance();
-        cal2.setTime(date2);
-
-        boolean isSameYear = cal1.get(Calendar.YEAR) == cal2
-                .get(Calendar.YEAR);
-        boolean isSameMonth = isSameYear
-                && cal1.get(Calendar.MONTH) == cal2.get(Calendar.MONTH);
-        boolean isSameDt = isSameMonth
-                && cal1.get(Calendar.DAY_OF_MONTH) == cal2
-                        .get(Calendar.DAY_OF_MONTH);
-
-        return isSameDt;
-    }
-    
-    
-
-	private Date dayEndOfDate(Date date) {
-
-		Calendar calr = Calendar.getInstance();
-		Date startOfDay = dayStartOfDate(date);
-		calr.setTime(startOfDay);
-		Date date2 = new Date(calr.getTime().getTime() + 24 * 60 * 60 * 1000 - 1);
-		return date2;
-	}
-	
-
-
 	/*
 	 * 按指定参数，同步Wind的数据到数据库。 注意这是旧的同步接口， 已经新加了一个更简单的公共接口: syncStockData
 	 * 

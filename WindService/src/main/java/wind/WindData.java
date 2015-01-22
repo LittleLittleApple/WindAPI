@@ -91,6 +91,10 @@ public class WindData {
 				String rawKey = this.fields[i].toLowerCase();
 				String[] values = this.data.get(i);
 				rowMap = new HashMap<String, String>();
+				if(times.length != values.length) {
+					System.out.println("time fields is not match the values fields.");
+					break;
+				}
 				for (int j = 0; j < values.length; j++) {
 					if (resList.size() > j) {
 						rowMap = resList.get(j);
@@ -105,6 +109,57 @@ public class WindData {
 			}
 		}
 		return resList;
+	}
+	
+	/*
+	 *  这个方法是专门为获取股票是否停牌用的方法
+	 */
+	public Map<String, Map<String, String>> getStocksSuspendFromData() {
+		Map<String, Map<String, String>> stockMap = new HashMap<String, Map<String, String>>();
+		String stockCodeField = "wind_code";
+		String secNameField = "sec_name";
+		String suspendType = "suspend_type";
+		String suspendReason = "suspend_reason";
+		
+
+		String isSuspended = "isSuspended";
+		// Normally wind_code is the second element.
+		if (this.data.size() > 1 && this.fields.length > 0) {
+			String[] stockCodes = getFieldValues(stockCodeField);
+			String[] secNames = getFieldValues(secNameField);
+			String[] suspendTypes = getFieldValues(suspendType);
+			String[] suspendReasons = getFieldValues(suspendReason);
+			stockMap = new HashMap<String, Map<String, String>>(stockCodes.length);
+			Map<String, String> suspendedData = null;
+			
+			for(int i=0;i<stockCodes.length;i++) {
+				suspendedData = new HashMap<String, String>();
+				suspendedData.put(secNameField, secNames[i]);
+				suspendedData.put(isSuspended, "1");
+				suspendedData.put(suspendType, suspendTypes[i]);
+				suspendedData.put(suspendReason, suspendReasons[i]);
+				stockMap.put(stockCodes[i], suspendedData);
+			}
+			
+		}
+		return stockMap;
+	}
+	
+	private String[] getFieldValues(String fieldName) {
+		int fieldIdx = getFieldIndex(fieldName);
+		if(fieldIdx != -1) {
+			return this.data.get(fieldIdx);
+		}else
+		{
+			return null;
+		}
+		
+	}
+	
+	private int getFieldIndex(String fieldName){
+		int resIdx = Arrays.asList(this.fields).indexOf(
+				fieldName);
+		return resIdx;
 	}
 	
 	private String processWindValue(String sValue) {

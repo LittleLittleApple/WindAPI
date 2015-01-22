@@ -1,17 +1,11 @@
 import java.io.IOException;
 import java.sql.SQLException;
-import java.text.DateFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.Test;
 
-import wind.KType;
-import wind.PriceAdjust;
 import wind.WindErrorResponse;
 import wind.WindService;
 
@@ -37,13 +31,13 @@ public class KDataTestCase {
 		System.out.println(kdata.toString());
 		Assert.assertTrue(kdata.size() == 10);
 		
-//		stockRes =  ws.getStockData("000001.SZ", "2014-11-16 01:38:31", 4, 0);
-//		kdata = stockRes.get(0);
-//		Assert.assertTrue(kdata.size() == 10);
-//		
-//		stockRes =  ws.getStockData("000001.SZ", "2014-11-16 01:38:31", 5, 0);
-//		kdata = stockRes.get(0);
-//		Assert.assertTrue(kdata.size() == 10);
+		stockRes =  ws.getStockData("000001.SZ", "2014-11-16 01:38:31", 4, 0);
+		kdata = stockRes.get(0);
+		Assert.assertTrue(kdata.size() == 10);
+		
+		stockRes =  ws.getStockData("000001.SZ", "2014-11-16 01:38:31", 5, 0);
+		kdata = stockRes.get(0);
+		Assert.assertTrue(kdata.size() == 10);
 		
 		
 		
@@ -114,7 +108,6 @@ public class KDataTestCase {
 		stockRes =  ws.getStockData("000001.SZ", sQryDate, 2, 0);
 		kdata = stockRes.get(0);
 		Assert.assertTrue(kdata.size() == 10);
-
 //		Assert.assertEquals(1420766700000.00, kdata.get(0), 0.000);
 //		Assert.assertEquals(14.9, kdata.get(1), 0.000);
 //		Assert.assertEquals(14.9, kdata.get(2), 0.000);
