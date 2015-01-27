@@ -9,32 +9,41 @@ import java.util.GregorianCalendar;
 
 public class DatetimeUtility {
 
-	public static Date dayStartOfDate(Date date) {
+	public static Date tradeStartTime(Date date) {
 
-		Calendar calr = Calendar.getInstance();
-		calr.setTime(date);
-		if ((calr.get(Calendar.HOUR_OF_DAY) == 0)
-				&& (calr.get(Calendar.MINUTE) == 0)
-				&& (calr.get(Calendar.SECOND) == 0)) {
-			return date;
+		Calendar cal = Calendar.getInstance();
+		
+		cal.setTime(date);
+		
+		if ((cal.get(Calendar.HOUR_OF_DAY) == 9)
+				&& (cal.get(Calendar.MINUTE) == 0)
+				&& (cal.get(Calendar.SECOND) == 0)) {
+			cal.add(Calendar.HOUR_OF_DAY, 9);
+			cal.add(Calendar.MINUTE, 30);
+			return cal.getTime();
 		} else {
 			Date date2 = new Date(date.getTime()
-					- calr.get(Calendar.HOUR_OF_DAY) * 60 * 60 * 1000
-					- calr.get(Calendar.MINUTE) * 60 * 1000
-					- calr.get(Calendar.SECOND) * 1000);
-			return date2;
+					- cal.get(Calendar.HOUR_OF_DAY) * 60 * 60 * 1000
+					- cal.get(Calendar.MINUTE) * 60 * 1000
+					- cal.get(Calendar.SECOND) * 1000);
+			cal.setTime(date2);
+			cal.add(Calendar.HOUR_OF_DAY, 9);
+			cal.add(Calendar.MINUTE, 30);
+			return cal.getTime();
 		}
 
 	}
 
-	public static Date dayEndOfDate(Date date) {
+	public static Date tradeEndTime(Date date) {
 
-		Calendar calr = Calendar.getInstance();
-		Date startOfDay = dayStartOfDate(date);
-		calr.setTime(startOfDay);
-		Date date2 = new Date(calr.getTime().getTime() + 24 * 60 * 60 * 1000
-				- 1000);
-		return date2;
+		Calendar cal = Calendar.getInstance();
+		Date startOfDay = tradeStartTime(date);
+		cal.setTime(startOfDay);
+		cal.add(Calendar.HOUR_OF_DAY, 5);
+		cal.add(Calendar.MINUTE, 30);
+//		Date date2 = new Date(cal.getTime().getTime() + 6 * 60 * 60 * 1000
+//				- 1000);
+		return cal.getTime();
 	}
 
 	public static Date firstDateOfWeek(Date qryDate) {
@@ -79,6 +88,40 @@ public class DatetimeUtility {
 		}
 		return isSameDate(new Date(), qryDate);
 	}
+
+	public static boolean isTradeBegan(String date) throws ParseException {
+		DateFormat format1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		DateFormat format2 = new SimpleDateFormat("yyyy-MM-dd");
+
+		Date qryDate = null;
+		try {
+			qryDate = format1.parse(date);
+		} catch (ParseException e) {
+			qryDate = format2.parse(date);
+		}
+		Date tradeStart = tradeStartTime(new Date()); //今天交易开始时间
+		return qryDate.after(tradeStart);
+	}
+
+	
+	public static boolean isTradeFinished(String date) throws ParseException {
+		DateFormat format1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		DateFormat format2 = new SimpleDateFormat("yyyy-MM-dd");
+
+		Date qryDate = null;
+		try {
+			qryDate = format1.parse(date);
+		} catch (ParseException e) {
+			qryDate = format2.parse(date);
+		}
+		return qryDate.after(tradeEndTime(new Date()));
+	}
+	
+	public static boolean isTradeFinished(Date qryDate) throws ParseException {
+		return qryDate.after(tradeEndTime(new Date()));
+	}
+
+	
 
 	/**
 	 * 判断两个日期是否是同一天

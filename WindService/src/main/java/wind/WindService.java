@@ -97,7 +97,7 @@ public class WindService {
 		
 		StockSuspendData ssd = null;
 		Date qryDate = DatetimeUtility.tryParseDate(sQryDate);
-		Date today = DatetimeUtility.dayEndOfDate(new Date());
+		Date today = DatetimeUtility.tradeEndTime(new Date());
 		
 		String startDate = null;
 		if(qryDate.after(today)) {
@@ -199,20 +199,57 @@ public class WindService {
 		query date: "yyyy-MM-dd HH:mm:ss". i.e "2014-11-17 01:38:31"
 		@return:  股票的列表数据
     */
-	public List<List<Double>> getStockData(String stockCode, String queryDate, Integer ktype, Integer priceAdj) throws ParseException, IOException, InterruptedException, WindErrorResponse, SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+	public List<List<Double>> getStockData(String stockCode, String sQryDate, Integer ktype, Integer priceAdj) throws ParseException, IOException, InterruptedException, WindErrorResponse, SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
 		List<List<Double>> res = null;//new ArrayList<List<Double>>();
 
 		List<String> stockList = Arrays.asList(stockCode);
 		
 		StockDataLoader sdl = StockDataLoader.getInstance(sqlCfg);
+		Calendar cal = Calendar.getInstance();
+		Date qryDate = DatetimeUtility.tryParseDate(sQryDate);
+		cal.setTime(qryDate);
 		//同步查询日期的K线数据, 如果当天没有结束，则不会同步。
-		if(ktype >= 3 && DatetimeUtility.isToday(queryDate)) {
-			return res;
+		if(ktype >= 3) {
+
+			if(ktype == 3) {
+				syncDayStockData(stockList, qryDate);
+
+			}else if (ktype == 4) {
+				//查询周K线时， 自动把上一周的周K数据同步一次。注意！！！ 如果上一周已经同步民，这个操作会更新上一周的数据。
+				cal.add(Calendar.WEEK_OF_YEAR, -1);
+				syncStockData(stockList, cal.getTime(), ktype);
+			}else if (ktype == 5) {
+				
+//				cal.add(Calendar.MONTH, -1);
+				//查询月K时， 只支持同步本月的数据. 由于wind无法支持MA均线的数据	
+				syncStockData(stockList, cal.getTime(), ktype);
+			}
+		}else{
+			//由于必须要借用日K来算最大复权因子， 所以必须同步一次日K的数据
+			syncDayStockData(stockList, new Date());
+			
+			//分钟K丝，如果当前查询的还没有开始了交易，那么，自动会把上一天的分钟K线同步
+			if(!DatetimeUtility.isTradeBegan(sQryDate)) {
+				cal.add(Calendar.DAY_OF_YEAR, -1);
+			}
+
+			syncStockData(stockList, cal.getTime(), ktype);
 		}
-		//分钟K线只会同步查询当天(today)的数据. Wind对查旧的分钟数据有很大的限制
-		syncStockData(stockList, queryDate, ktype);
-		res = sdl.getStockData(stockCode, ktype, priceAdj, queryDate);
+
+		res = sdl.getStockData(stockCode, ktype, priceAdj, sQryDate);
 		return res;
+	}
+	
+	private void syncDayStockData(List<String> stockList, Date qryDate) throws IOException, InterruptedException, WindErrorResponse, SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException, ParseException{
+		Calendar cal = Calendar.getInstance();
+		//如果查询的日K线的时间是在本日交易结束后查询的，那么直接同步当天的数据
+		if(DatetimeUtility.isTradeFinished(qryDate)) {
+			syncStockData(stockList, qryDate, 3);				
+		}else{
+			//当查询日K的时候，如果交易还没结束， 那自动会把昨天的日K同步一次
+			cal.add(Calendar.DAY_OF_YEAR, -1);
+			syncStockData(stockList, cal.getTime(), 3);
+		}
 	}
 	
     /**
@@ -277,6 +314,48 @@ public class WindService {
 		syncKData(stockList, startDate, endDate, ktype.toString(), PriceAdjust.NONE);
 	}
 	
+	
+	public void simulation(List<String> stockList, String sQryDate) throws IOException, InterruptedException, WindErrorResponse, SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException, ParseException {
+		Date qryDate = DatetimeUtility.tryParseDate(sQryDate);
+		Calendar cal = Calendar.getInstance();
+		for (int ktype =0;ktype<=5;ktype++) {
+			Date startDate = KType.getDefaultStart(qryDate, ktype);
+			Date endDate = KType.getDefaultEnd(qryDate, ktype);
+			cal.setTime(startDate);
+			if(ktype == 0) {
+				cal.add(Calendar.DAY_OF_YEAR, -4); //in case there are two weekend days.
+				syncKData(stockList, cal.getTime(), endDate, String.valueOf(ktype), PriceAdjust.NONE);
+			}else if (ktype == 1) {
+				cal.add(Calendar.DAY_OF_YEAR, -12); // in case there are two weekend days.
+				syncKData(stockList, cal.getTime(), endDate, String.valueOf(ktype), PriceAdjust.NONE);
+			}else if (ktype == 2) {
+				syncDataByPeriod(stockList, startDate, endDate, ktype, 60);				
+			}else if (ktype == 3) {
+//				cal.add(Calendar.DAY_OF_YEAR, -450); //exclude two weekend days.
+				syncDataByPeriod(stockList, startDate, endDate, ktype, 550);				
+			}else if (ktype == 4) {
+				cal.add(Calendar.WEEK_OF_YEAR, -4); //exclude this week
+				syncKData(stockList, cal.getTime(), endDate, String.valueOf(ktype), PriceAdjust.NONE);
+			}else if (ktype == 5) {
+				syncKData(stockList, startDate, endDate, String.valueOf(ktype), PriceAdjust.NONE);
+			}
+			
+		}
+	}
+	
+	private void syncDataByPeriod(List<String> stockList, Date startDate, Date endDate, int ktype, int customizedDays) throws IOException, InterruptedException, WindErrorResponse, SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException, ParseException {
+		int times = customizedDays/30;
+		Calendar cal = Calendar.getInstance();
+		Date start = cal.getTime();
+		Date end = endDate;
+		for(int i=0;i < times + 1;i++) {
+			cal.add(Calendar.DAY_OF_YEAR, -25); //in case there are two weekend days.
+			start = cal.getTime();
+			syncKData(stockList, start, end, String.valueOf(ktype), PriceAdjust.NONE);
+			end = start;
+		}
+	}
+	
 	/*
 	 * 按指定参数，同步Wind的数据到数据库。 注意这是旧的同步接口， 已经新加了一个更简单的公共接口: syncStockData
 	 * 
@@ -289,14 +368,20 @@ public class WindService {
 
 		StockImporter importer = StockImporter.getInstance(sqlCfg);
 		importer.checkDbVersion();
+		boolean forceUpdate = false;
+		int iKtype = Integer.parseInt(ktype);
+		//由于wind在周、月没结束的时候，能返回周、月的K线数据。 所以必须要支持可更新的同步给周、月使用。
+		if(iKtype > 3 ) {
+			forceUpdate = true;
+		}
 		for (int i = 0; i < stockList.size(); i++) {
 			String stockCode = stockList.get(i);
-			if(importer.isImported(stockCode, Integer.parseInt(ktype))) {
+			if(!forceUpdate && importer.isImported(stockCode, begin, end, iKtype)) {
 				continue;
 			}
 			List<Map<String, String>> kDataLst = getKData(stockCode, begin,
 					end, ktype, priceAdj);
-			importer.importStocks(kDataLst);
+			importer.importStocks(kDataLst,forceUpdate);
 //			importer.updateStockMinuteAdjFactor(stockCode, Integer.parseInt(ktype));
 
 		}

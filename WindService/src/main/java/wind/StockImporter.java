@@ -8,6 +8,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,12 @@ public class StockImporter {
 			+ " SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,? "
 			+ " FROM dual "
 			+ " WHERE NOT EXISTS (SELECT 1 FROM ws_kdata WHERE stockCode= ? AND ktype= ? AND w_time= ?) ";
+	
+	private static final String INSERT_STOCK_SQL_FORCE_UPDATE="REPLACE INTO ws_kdata (stockCode, ktype, w_time, "
+			+ " open, high, low, close, volume, amt, ma5, ma10, ma20, adjfactor, yearMonth, yearWeek, yearDate, createdAt, updatedAt) "
+			+ " SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,? "
+			+ " FROM dual "
+			+ "  ";
 	
 	//make sure that the ktype is less than 3(is minute ktype)
 	private static final String UPDATE_MINUTE_KDATA_ADJFACTOR_SQL="update ws_kdata t1 inner join (select stockCode, adjfactor,yearDate from ws_kdata where ktype = 3) t2"
@@ -88,23 +95,25 @@ public class StockImporter {
 	}
 	
 	// check if the stock has been imported
-	public boolean isImported(String stockCode, Integer ktype) throws SQLException, FileNotFoundException {
+	public boolean isImported(String stockCode, Date begin, Date end, Integer ktype) throws SQLException, FileNotFoundException {
 
 		//由于一天可能在不同的时间点同步多次股票数据，所以要求分钟的K线数据可以重复导入并更新
 		if(ktype < 3) {
 			return false;
 		}
 		//日K线，周K线，月K线
-		String sSQL = "select  1  from ws_kdata where stockCode = '"+ stockCode +"' and ktype = " + ktype;
+		String sSQL = "select  1  from ws_kdata where stockCode = '"+ stockCode +"' and ktype = " + ktype + " and w_time >= " + begin.getTime() + " and w_time <  " + end.getTime();
+		System.out.println(sSQL);
 		ResultSet rs =  dbHelper.executeQuery(sSQL);
 		if (rs.next()) {
+			System.out.println("Existing. Skipped import.");
 			return true;
 		}
 		return false;
 	}
 	
 	//Arrays.asList(timeKey,"open","high","low","close", "ma5", "ma10", "ma20","amt","volume");
-	public void importStocks(List<Map<String, String>> kdataLst) throws SQLException, ParseException {
+	public void importStocks(List<Map<String, String>> kdataLst, boolean forceUpdate) throws SQLException, ParseException {
 		int total = kdataLst.size();
 		int insert = 0;
 		
@@ -112,18 +121,24 @@ public class StockImporter {
 		boolean autoCommit = conn.getAutoCommit();
 
 		int batchLimit = 1000;
+		String sSql = null;
 		
+		if(forceUpdate) {
+			sSql = INSERT_STOCK_SQL_FORCE_UPDATE;
+		}else {
+			sSql = INSERT_STOCK_SQL;
+		}
 
 		try {
 			PreparedStatement insertStmt = conn
-					.prepareStatement(INSERT_STOCK_SQL);
+					.prepareStatement(sSql);
 			conn.setAutoCommit(false);
 			try {
 				
 				while(it.hasNext()){
 					Map<String, String> kdata = it.next();
 					SingleStockSQLData stockData = new SingleStockSQLData(kdata);
-					setInsertStockStmt(insertStmt, stockData);batchLimit--;
+					setInsertStockStmt(insertStmt, stockData,forceUpdate);batchLimit--;
 					if (batchLimit == 0) {
 						insertStmt.executeBatch();
 						insertStmt.clearBatch();
@@ -143,7 +158,7 @@ public class StockImporter {
 		System.out.println("totla: " + total + "  insert: " + insert);
 	}
 	//stockCode, ktype, w_time, open, high, low, close, volume, amt, createdAt, updatedAt
-	private void setInsertStockStmt(PreparedStatement insertStmt, SingleStockSQLData stockData) throws SQLException {
+	private void setInsertStockStmt(PreparedStatement insertStmt, SingleStockSQLData stockData, boolean forceUpdate) throws SQLException {
 		int index = 1;
 		insertStmt.setString(index++, stockData.getStockCode());
 		insertStmt.setInt(index++, stockData.getKtype());
@@ -164,14 +179,17 @@ public class StockImporter {
 		insertStmt.setTimestamp(index++, new java.sql.Timestamp(stockData.getCreatedAt().getTime()));
 		insertStmt.setTimestamp(index++, new java.sql.Timestamp(stockData.getUpdatedAt().getTime()));
 		
-		//duplicate checking.
-		insertStmt.setString(index++, stockData.getStockCode());
-		insertStmt.setInt(index++, stockData.getKtype());
-		insertStmt.setTimestamp(index++, new java.sql.Timestamp(stockData.getWTime().getTime()));
-
+		if(!forceUpdate) {
+			//duplicate checking.
+			insertStmt.setString(index++, stockData.getStockCode());
+			insertStmt.setInt(index++, stockData.getKtype());
+			insertStmt.setTimestamp(index++, new java.sql.Timestamp(stockData.getWTime().getTime()));
+		}
+		
 //		System.out.println(insertStmt.toString());
 		insertStmt.addBatch();
 	}
+	
 	
 	
 	public void updateStockMinuteAdjFactor(String stockCode, Integer ktype) throws SQLException {

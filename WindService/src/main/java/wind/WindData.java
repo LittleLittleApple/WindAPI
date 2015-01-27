@@ -92,7 +92,7 @@ public class WindData {
 				String[] values = this.data.get(i);
 				rowMap = new HashMap<String, String>();
 				if(times.length != values.length) {
-					System.out.println("time fields is not match the values fields.");
+					System.out.println("time fields size" + times.length + " is not match the values fields size " + values.length);
 					break;
 				}
 				for (int j = 0; j < values.length; j++) {

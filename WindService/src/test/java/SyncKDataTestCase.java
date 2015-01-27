@@ -36,11 +36,32 @@ public class SyncKDataTestCase {
 
 
 
-		sQryDate = "2015-01-14 15:38:31";
+		sQryDate = "2015-01-26 15:38:31";
 		ws.syncStockData(stockCodes, sQryDate);
 		
-		sQryDate = "2015-01-15 15:38:31";
+		sQryDate = "2015-01-26 15:38:31";
 		ws.syncStockData(stockCodes, sQryDate);
+		
+	}
+	
+	@Test
+	public void testSimulation() throws IOException, ParseException, InterruptedException, WindErrorResponse, SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+		DateFormat format1 = new SimpleDateFormat(KDATA_DATE_FORMAT);  
+		Date begin = null;
+		Date end = null;
+
+		String sQryDate = "2015-01-15 15:38:31";
+		
+		begin = format1.parse("2015-01-15 01:20:31");
+		end = format1.parse("2015-01-15 15:38:31");	
+		
+		List<String> stockCodes = new ArrayList<String>();
+		stockCodes.add("000001.SZ");
+//		stockCodes.add("000002.SZ");
+
+
+		sQryDate = "2015-01-26 15:38:31";
+		ws.simulation(stockCodes, sQryDate);
 		
 	}
 

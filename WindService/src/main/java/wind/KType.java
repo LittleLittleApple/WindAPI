@@ -35,7 +35,7 @@ public class KType {
 	public static Date getDefaultStart(Date qryDate, Integer ktype) {
 		Date startDate = null;
 		if(ktype <= 3) {
-			startDate = DatetimeUtility.dayStartOfDate(qryDate);
+			startDate = DatetimeUtility.tradeStartTime(qryDate);
 		}else if (ktype == 4) {
 			startDate = DatetimeUtility.firstDateOfWeek(qryDate);
 		}else if (ktype == 5) {
@@ -47,7 +47,7 @@ public class KType {
 	public static Date getDefaultEnd(Date qryDate, Integer ktype) {
 		Date startDate = null;
 		if(ktype <= 3) {
-			startDate = DatetimeUtility.dayEndOfDate(qryDate);
+			startDate = DatetimeUtility.tradeEndTime(qryDate);
 		}else if (ktype == 4) {
 			startDate = DatetimeUtility.lastDateOfWeek(qryDate);
 		}else if (ktype == 5) {

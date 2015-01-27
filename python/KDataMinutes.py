@@ -20,6 +20,10 @@ start_date = sys.argv[2]
 end_date = sys.argv[3]
 bar_size = sys.argv[4]
 priceAdj = sys.argv[5]
+debug = None
+if len(sys.argv) > 6 and sys.argv[6] == "debug":
+    debug = True
+
 fields = "open,close,high,low,volume,amt"
 
 if priceAdj == "N":
@@ -31,11 +35,11 @@ def is_same_day(strDateTime1, strDateTime2):
     return strDate1 == strDate2
 
 
-if not is_same_day(start_date, end_date):
-    err_msg = "Wrong parameters: the start date {0} is not equal to end date {1}. Same date is only supported.".format(start_date, end_date)
-    print "\n.ErrorCode=-99999"
-    print "\n.Data=[['{0}']]".format(err_msg)
-    raise StandardError, err_msg
+# if not debug and (not is_same_day(start_date, end_date)):
+#     err_msg = "Wrong parameters: the start date {0} is not equal to end date {1}. Same date is only supported.".format(start_date, end_date)
+#     print "\n.ErrorCode=-99999"
+#     print "\n.Data=[['{0}']]".format(err_msg)
+#     raise StandardError, err_msg
 
 #fetch and merge adj from wsd
 res_day =  w.wsd(stock_code, "adjfactor", start_date, end_date, "Period=D;{0}Fill=Previous".format(priceAdj))
@@ -44,7 +48,7 @@ if res_day.ErrorCode != 0:
     err_msg = "Error while fetching Date K data.ErrorCode: {0}".format(res_day.ErrorCode)
     raise StandardError,err_msg
 
-adjfactor=res_day.Data[0]
+adjfactor=res_day.Data[0][0]
 
 #3.getKData
 #∑÷÷”–Ú¡–Kœﬂ
@@ -57,10 +61,9 @@ res = w.wsi(stock_code,fields,start_date,end_date,"{0}{1}Fill=Previous;".format(
 print res
 
 #add adjfactor to kdata
-
 adjfactor_lst = []    #temp adjfactor list.
 for item in res.Times:
-    adjfactor_lst = adjfactor_lst + adjfactor
+    adjfactor_lst = adjfactor_lst + [adjfactor]
 
 res.Fields = res.Fields + ['adjfactor']
 res.Data = res.Data + [adjfactor_lst]

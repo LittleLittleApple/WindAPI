@@ -15,17 +15,17 @@ public class SingleStockData {
 	private int ktype = -1;
 	private int priceAdj = -1;
 	private Date w_time = null; 
-	private double open = -1d; 
-	private double high = -1d; 
-	private double low = -1d;
-	private double close = -1d; 
-	private double volume = -1d; 
-	private double amt = -1d; 
-	private double ma5 = -1d;
-	private double ma10 = -1d;
-	private double ma20 = -1d;
-	private double adjfactor = -1d;
-	private double max_adjfactor = -1d;
+	private Double open = null; 
+	private Double high = null; 
+	private Double low = null;
+	private Double close = null; 
+	private Double volume = null; 
+	private Double amt = null; 
+	private Double ma5 = null;
+	private Double ma10 = null;
+	private Double ma20 = null;
+	private Double adjfactor = null;
+	private Double max_adjfactor = null;
 	private Date createdAt = null; 
 	private Date updatedAt = null;
 	
@@ -114,7 +114,7 @@ public class SingleStockData {
 	//TODO 默认值应该返回null, 而不是-1
 	private Double parseAdjValue(Double v) {
 		Double resV= v;
-		if(v == null || v.isNaN()) {
+		if(v == null || adjfactor == null || max_adjfactor == null || v.isNaN()  ) {
 			return null;
 		}else{
 			

@@ -24,7 +24,7 @@ public class KDataTestCase {
 //		kdata = stockRes.get(0);
 //		System.out.println(kdata.toString());
 //		Assert.assertTrue(kdata.size() == 10);
-		
+
 
 		stockRes =  ws.getStockData("000001.SZ", "2014-06-11 01:38:31", 3, 0);
 		kdata = stockRes.get(0);
@@ -58,18 +58,65 @@ public class KDataTestCase {
 	public void testStockDataIntegrate() throws ParseException, IOException, InterruptedException, WindErrorResponse, SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
 		List<List<Double>> stockRes = null;
 		List<Double> kdata = null;		
-		String sQryDate="2015-01-19 16:01:53";
+		String sQryDate="2015-01-27 01:01:53";
+		
 		
 		stockRes =  ws.getStockData("000001.SZ", sQryDate, 0, 1);
+		System.out.println("Record Count: " + stockRes.size());
+//		Assert.assertTrue(stockRes.size() == 300);
 		kdata = stockRes.get(0);
+		System.out.println(kdata.toString());
+		Assert.assertTrue(kdata.size() == 10);
+//
+		stockRes =  ws.getStockData("000001.SZ", sQryDate, 1, 1);
+		System.out.println("Record Count: " + stockRes.size());
+//		Assert.assertTrue(stockRes.size() > 200);
+		kdata = stockRes.get(0);
+		System.out.println(kdata.toString());
+		Assert.assertTrue(kdata.size() == 10);
+//
+		stockRes =  ws.getStockData("000001.SZ", sQryDate, 2, 1);
+		System.out.println("Record Count: " + stockRes.size());
+//		Assert.assertTrue(stockRes.size() > 200);
+		kdata = stockRes.get(0);
+		System.out.println(kdata.toString());
+		Assert.assertTrue(kdata.size() == 10);
+		
+		stockRes =  ws.getStockData("000001.SZ", sQryDate, 3, 1);
+		System.out.println("Record Count: " + stockRes.size());
+//		Assert.assertTrue(stockRes.size() > 200);
+		kdata = stockRes.get(0);
+		System.out.println(kdata.toString());
+		Assert.assertTrue(kdata.size() == 10);
+
+		stockRes =  ws.getStockData("000001.SZ", sQryDate, 4, 1);
+		System.out.println("Record Count: " + stockRes.size());
+//		Assert.assertTrue(stockRes.size() > 4);
+		kdata = stockRes.get(0);
+		System.out.println(kdata.toString());
 		Assert.assertTrue(kdata.size() == 10);
 		
 
-		sQryDate="2015-01-20 16:01:53";
-		
-		stockRes =  ws.getStockData("000001.SZ", sQryDate, 0, 1);
+
+		stockRes =  ws.getStockData("000001.SZ", sQryDate, 5, 1);
+		System.out.println("Record Count: " + stockRes.size());
+		Assert.assertTrue(stockRes.size() > 0);
 		kdata = stockRes.get(0);
+		System.out.println(kdata.toString());
 		Assert.assertTrue(kdata.size() == 10);
+		
+		
+		
+//		stockRes =  ws.getStockData("000001.SZ", sQryDate, 4, 1);
+//		kdata = stockRes.get(0);
+//		System.out.println(kdata.toString());
+//		Assert.assertTrue(kdata.size() == 10);
+//
+//		
+//		stockRes =  ws.getStockData("000001.SZ", sQryDate, 5, 1);
+//		kdata = stockRes.get(0);
+//		System.out.println(kdata.toString());
+//		Assert.assertTrue(kdata.size() == 10);
 	}
 		
 	
